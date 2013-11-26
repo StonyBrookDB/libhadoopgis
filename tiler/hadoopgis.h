@@ -7,8 +7,6 @@
 
 #include <iostream>
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <map>
 
 // libspatialindex
@@ -29,7 +27,6 @@
 #define COMPRESS true
 
 
-using namespace std;
 using namespace SpatialIndex;
 
 using namespace geos;

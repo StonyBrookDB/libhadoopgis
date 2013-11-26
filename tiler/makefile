@@ -3,8 +3,8 @@ spatial=/home/aaji/softs
 
 UNAME		= $(shell uname)
 OPTFLAGS	= -O2
-INCBASE		= -I.
-LIBBASE		= -lspatialindex -lgeos
+INCBASE		= -I. -I/usr/local/include
+LIBBASE		= -lspatialindex -lgeos -L/usr/local/lib
 
 ifneq (,$(findstring Linux,$(shell uname -a)))
     INCFLAGS = -I$(spatial)/include
@@ -20,9 +20,9 @@ CFLAGS      = $(OPTFLAGS) $(INCBASE) $(INCFLAGS)
 LDFLAGS     = $(LIBBASE) $(LIBS)
 
 ifeq ($(UNAME), Darwin)
-    CC = g++ -arch x86_64
+  CC = g++ -arch x86_64
 else 
-    CC = g++
+  CC = g++
 endif
 
 

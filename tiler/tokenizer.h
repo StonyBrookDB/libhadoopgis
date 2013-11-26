@@ -1,3 +1,7 @@
+#include <string>
+#include <vector>
+
+using namespace std;
 
 void tokenize ( const string& str, vector<string>& result,
 	const string& delimiters = " ,;:\t", 
