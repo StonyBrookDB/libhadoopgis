@@ -1,51 +1,4 @@
-#include <cmath>
-#include <dirent.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
-#include <iostream>
-#include <algorithm>
-#include <string>
-#include <vector>
-#include <map>
-
-// libspatialindex
-#include <spatialindex/SpatialIndex.h>
-
-// geos 
-#include <geos/geom/PrecisionModel.h>
-#include <geos/geom/GeometryFactory.h>
-#include <geos/geom/Geometry.h>
-#include <geos/geom/Point.h>
-#include <geos/io/WKTReader.h>
-
-#include "tokenizer.h"
-
-#define FillFactor 0.9
-#define IndexCapacity 10 
-#define LeafCapacity 50
-#define COMPRESS true
-
-
-using namespace std;
-using namespace SpatialIndex;
-
-using namespace geos;
-using namespace geos::io;
-using namespace geos::geom;
-
-
-const string BAR = "|";
-const string DASH= "-";
-const string TAB = "\t";
-const string COMMA = ",";
-const string SPACE = " ";
-
-const string shapebegin = "POLYGON((";
-const string shapeend = "))";
-/* 
 void tokenize ( const string& str, vector<string>& result,
 	const string& delimiters = " ,;:\t", 
 	const bool keepBlankFields=false,
@@ -159,11 +112,11 @@ void tokenize ( const string& str, vector<string>& result,
 	++pos;
     } // while
     
-     
-    //cout << "ch: " << (int) ch << endl;
-    //cout << "token_complete: " << token_complete << endl;
-    //cout << "token: " << token<< endl;
-    
+    /* 
+    cout << "ch: " << (int) ch << endl;
+    cout << "token_complete: " << token_complete << endl;
+    cout << "token: " << token<< endl;
+    */
     // add the final token
     if ( false == token.empty() ) {
 	result.push_back( token );
@@ -172,4 +125,4 @@ void tokenize ( const string& str, vector<string>& result,
 	result.push_back("");
     }
 }
-*/
+

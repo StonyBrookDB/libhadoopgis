@@ -6,7 +6,7 @@ OPTFLAGS	= -O2
 INCBASE		= -I.
 LIBBASE		= -lspatialindex -lgeos
 
-ifneq (,$(findstring emory,$(shell uname -a)))
+ifneq (,$(findstring Linux,$(shell uname -a)))
     INCFLAGS = -I$(spatial)/include
     LIBS = -L$(spatial)/lib
 else 
@@ -34,10 +34,10 @@ debug: hgtiler
 
 # gengetopt -i options.ggo -F cmdline
 
-cmd.o: options.ggo
-	$(CC) -c cmdline.c -o cmd.o 
+cmd.o: options.ggo cmdline.h cmdline.c
+	$(CC) -c cmdline.c -o cmd.o
 
-hgtiler: cmd.o tiler.cpp hadoopgis.h
+hgtiler: cmd.o tiler.cpp hadoopgis.h tokenizer.h
 	$(CC) tiler.cpp cmd.o $(CFLAGS) $(LDFLAGS) $(OPTFLAGS) -o hgtiler
 clean:
 	@rm -f *.o hgtiler
