@@ -232,8 +232,8 @@ bool readSpatialInputGEOS()
       ss << fields[i];
     }
 
-    polydata[key][database_id].push_back(poly);
-    data[key][database_id].push_back(ss.str());
+    polydata[tile_id][database_id].push_back(poly);
+    data[tile_id][database_id].push_back(ss.str());
 
     fields.clear();
   }

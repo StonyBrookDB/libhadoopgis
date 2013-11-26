@@ -1,8 +1,8 @@
 
 prefix=/usr/local
 
-libbase=/usr/local/lib
-incbase=/usr/local/include
+libbase=/home/aaji/softs/lib
+incbase =/home/aaji/softs/include
 
 OPTFLAGS	= -O2
 INCFLAGS	= -I $(incbase)
