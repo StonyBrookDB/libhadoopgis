@@ -56,16 +56,6 @@ double expansion_distance = 0.0;
 int JOIN_PREDICATE = 0;
 int shape_idx_1 = -1;
 int shape_idx_2 = -1;
-/*
-void tokenize (string& str, vector<string>& result,
-    string delimiters = " ,;:\t", 
-    bool keepBlankFields =false,
-    string quote="\"\'");
-bool readSpatialInputGEOS();
-bool join_with_predicate(const Geometry * geom1, const Geometry * geom2, int jp);
-int join();
-bool cleanup();
-*/
 
 void tokenize ( const string& str, vector<string>& result,
     const string& delimiters = " ,;:\t", 
@@ -197,16 +187,11 @@ void tokenize ( const string& str, vector<string>& result,
 bool readSpatialInputGEOS() 
 {
   string input_line;
-  string store_line;
-
-  string key;
+  string tile_id ;
   string value;
-
   vector<string> fields;
 
   int database_id = 0;
-  int object_id = 0;
-  size_t key_pos;
 
   GeometryFactory *gf = new GeometryFactory(new PrecisionModel(),OSM_SRID);
   WKTReader *wkt_reader = new WKTReader(gf);
@@ -216,7 +201,8 @@ bool readSpatialInputGEOS()
 
     tokenize(input_line, fields,tab);
     database_id = atoi(fields[0].c_str());
-    key = fields[1];
+    tile_id = fields[1];
+    // object_id = fields[2];
 
     // cerr << "fields[0] = " << fields[0] << endl; 
     // cerr << "fields[1] = " << fields[1] << endl; 
@@ -239,8 +225,8 @@ bool readSpatialInputGEOS()
     }
 
     std::stringstream ss;
-    for (size_t i =2; i < fields.size(); ++i) {
-      if (i != 2) {
+    for (size_t i =2 ; i < fields.size(); ++i) {
+      if (i != 2 ) {
         ss << tab;
       }
       ss << fields[i];
@@ -381,8 +367,8 @@ int main(int argc, char** argv)
   //cerr << "argv[2] = " << argv[2] << endl;
   //cerr << "argv[3] = " << argv[3] << endl;
 
-  shape_idx_1 = strtol(argv[2], NULL, 10) -2;
-  shape_idx_2 = strtol(argv[3], NULL, 10) -2;
+  shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+  shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
 
   if (strcmp(argv[1], "st_intersects") == 0) {
     JOIN_PREDICATE = ST_INTERSECTS;

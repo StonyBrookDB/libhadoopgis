@@ -1,4 +1,6 @@
-    
+
+prefix=/usr/local
+
 libbase=/usr/local/lib
 incbase=/usr/local/include
 
@@ -14,6 +16,10 @@ all: resque
 
 resque: resque.cpp
 	$(CXX) resque.cpp $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
+install:
+	mkdir -p $(prefix)/bin
+	cp resque $(prefix)/bin
+
 clean:
 	@rm -f resque
 

@@ -18,7 +18,7 @@ usage(){
 # Reset all variables that might be set
 enginepath=/usr/local/bin/resque
 ldpath=/usr/local/lib:/usr/lib:$LD_LIBRARY_PATH
-reducecount=10
+reducecount=20
 inputdira=""
 inputdirb=""
 outputdir=""
@@ -127,12 +127,16 @@ if [ ! "$inputdira" ] || [ ! "$inputdirb" ] || [ ! "$outputdir" ]; then
     exit 1
 fi
 
+randomfilename=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+tempdir=/tmp/${randomfilename}
+
 reducecmd="resque st_${predicate} ${gidxa} ${gidxb}"
 
-echo -e "starting tile job\n" 
+echo -e "starting the job\n" 
+echo -e "--------------[join stage]----------------\n" 
 # actual job is performed here
 
-hadoop jar contrib/streaming/hadoop-streaming.jar -mapper 'tagmapper.py ${inputdira} ${inputdirb}' -reducer '${reducecmd}' -file tagmapper.py -file ${enginepath} -input ${inputdira} -input ${inputdirb} -output ${output} -numReduceTasks ${reducecount} ${verbose} -jobconf mapred.job.name="hadoopgis-joinjob-${inputdira}-${inputdirb}" -jobconf mapred.task.timeout=360000000 -cmdenv LD_LIBRARY_PATH=${ldpath}
+hadoop jar contrib/streaming/hadoop-streaming.jar -mapper 'tagmapper.py ${inputdira} ${inputdirb}' -reducer '${reducecmd}' -file tagmapper.py -file ${enginepath} -input ${inputdira} -input ${inputdirb} -output ${tempdir} -numReduceTasks ${reducecount} ${verbose} -jobconf mapred.job.name="hadoopgis-joinjob-${inputdira}-${inputdirb}" -jobconf mapred.task.timeout=360000000 -cmdenv LD_LIBRARY_PATH=${ldpath}
 
 succ=$?
 
@@ -140,6 +144,20 @@ if [[ $succ != 0 ]] ; then
     echo -e "\n\njoin task has failed. \nPlease check the output result for debugging."
     exit $succ
 fi
+
+# deduplication job 
+echo -e "--------------[dedup stage]----------------\n" 
+
+hadoop jar contrib/streaming/hadoop-streaming.jar -mapper 'cat -' -reducer 'uniq ' -input ${tempdir} -output ${outputdir} -numReduceTasks ${reducecount} ${verbose} -jobconf mapred.job.name="hadoopgis-joinjob-dedup" -jobconf mapred.task.timeout=360000000
+
+succ=$?
+
+if [[ $succ != 0 ]] ; then
+    echo -e "\n\n deduplication stage has failed. \nPlease check the output result for debugging."
+    exit $succ
+fi
+
+hadoop fs -rmr ${tempdir}
 
 echo "\n\njoin task has finished successfully."
 

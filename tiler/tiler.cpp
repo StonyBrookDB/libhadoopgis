@@ -6,8 +6,8 @@ GeometryFactory *gf = NULL;
 WKTReader *wkt_reader = NULL;
 IStorageManager * storage = NULL;
 ISpatialIndex * spidx = NULL;
-map<int,string> id_polygon ;
-vector<int> hits ; 
+map<id_type,string> id_polygon ;
+vector<id_type> hits ; 
 char * prefix;
 
 int GEOM_IDX = -1;
@@ -180,7 +180,6 @@ vector<Geometry*> genTiles(double min_x, double max_x, double min_y, double  max
 
 vector<string> parse(string & line) {
     vector<string> tokens ;
-    // if we have boost then 
     tokenize(line, tokens,TAB,true);
     return tokens;
 }
@@ -213,9 +212,9 @@ void emitHits(Geometry* poly) {
     ss << DASH ;
     ss<< high[1] ;
 
-    for (int i = 0 ; i < hits.size(); i++ ) 
+    for (uint32_t i = 0 ; i < hits.size(); i++ ) 
     {
-	cout << ss.str() << TAB << id_polygon[hits[i]] << endl ;
+	cout << ss.str() << TAB << hits[i] << TAB <<id_polygon[hits[i]] << endl ;
     }
 }
 
@@ -278,19 +277,19 @@ int main(int argc, char **argv) {
     string input_line;
     vector<string> fields;
     cerr << "Reading input from stdin..." <<endl; 
-    int i = -1; 
+    id_type id ; 
     Geometry* geom ; 
 
     while(cin && getline(cin, input_line) && !cin.eof()){
 	fields = parse(input_line);
 	if (fields[ID_IDX].length() <1 )
 	    continue ;  // skip lines which has empty id field 
-	i = atoi(fields[ID_IDX].c_str()); 
+	id = std::strtoul(fields[ID_IDX].c_str(), NULL, 0);
 
 	if (fields[GEOM_IDX].length() <2 )
 	{
 #ifndef NDEBUG
-	    cerr << "skipping record [" << i <<"]"<< endl;
+	    cerr << "skipping record [" << id <<"]"<< endl;
 #endif
 	    continue ;  // skip lines which has empty geometry
 	}
@@ -304,8 +303,8 @@ int main(int argc, char **argv) {
 	  continue ;
 	  }*/
 
-	geom_polygons[i]= geom;
-	id_polygon[i] = input_line; 
+	geom_polygons[id]= geom;
+	id_polygon[id] = input_line; 
     }
     // build spatial index for input polygons 
     bool ret = buildIndex(geom_polygons);

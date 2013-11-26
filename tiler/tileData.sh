@@ -7,7 +7,7 @@ usage(){
     --north \t maximum coordinate value in the vertical direction [y axis] \n \
     --south \t minimum coordinate value in the vertical direction [y axis] \n \
     --east \t maximum coordinate value in the horizontal direction [x axis]\n \
-    --north \t minimum coordinate value in the horizontal direction [x axis] \n \
+    --west \t minimum coordinate value in the horizontal direction [x axis] \n \
     --xsplit \t number of splits in the horizontal direction \n \
     --ysplit \t number of splits in the vertical  direction \n \
     --geom \t index of the geometry field \n \
@@ -29,7 +29,8 @@ east=""
 xsplit=""
 ysplit=""
 gidx=""
-uidx=""
+uidx=0
+redtasks=20
 
 while :
 do
@@ -119,6 +120,14 @@ do
 	uidx=${1#*=}        # Delete everything up till "="
 	    shift
 	    ;;
+	-r | --worker)
+	    redtasks=$2     # You might want to check if you really got FILE
+	    shift 2
+	    ;;
+	--worker=*)
+	redtasks=${1#*=}        # Delete everything up till "="
+	    shift
+	    ;;
 	-v | --verbose)
 	    # Each instance of -v adds 1 to verbosity
 	    verbose="-verbose"
@@ -148,6 +157,10 @@ if [ ${fidx} -lt 1 ]; then
     echo "ERROR: geometry field index can not start a value less than 1."
     exit 1
 fi
+if [ ${uidx} -lt 1 ]; then
+    echo "ERROR: UID field index can not start a value less than 1."
+    exit 1
+fi
 
 if [ ! "$inputdir" ] || [ ! "$outputdir" ]; then
     echo "ERROR: missing option. See --help" >&2
@@ -166,16 +179,14 @@ if [ ! "$ysplit" ] || [ ! "$xsplit" ]; then
     ysplit=10
 fi
 
-mapprog="-w ${west}  -s ${south}  -n ${north}  -e ${east}  -x ${xsplit} -y ${ysplit} -u ${uidx} -g ${gidx}"
-redprog="tilerreducer"
-redtasks=20
+redprog="hgtiler -w ${west}  -s ${south}  -n ${north}  -e ${east}  -x ${xsplit} -y ${ysplit} -u ${uidx} -g ${gidx}"
 
 echo -e "starting tile job\n" 
 # actual job is performed here
 
-./tiler $mapprog
+# ./tiler $mapprog
 
-# hadoop jar contrib/streaming/hadoop-streaming.jar -mapper ${mapprog} -reducer ${redprog} -file ${mapprog} -file ${redprog} -input ${inputdir} -output ${outputdir} -numReduceTasks ${reducecount} ${verbose} -jobconf mapred.job.name="hadoopgis-TileJob-${inputdir}"  -jobconf mapred.task.timeout=360000000
+hadoop jar contrib/streaming/hadoop-streaming.jar -mapper 'cat - ' -reducer '${redprog}' -file /usr/bin/cat -file ${redprog} -input ${inputdir} -output ${outputdir} -numReduceTasks ${redtasks} ${verbose} -jobconf mapred.job.name="hadoopgis-TileJob-${inputdir}"  -jobconf mapred.task.timeout=360000000
  
 succ=$?
 
