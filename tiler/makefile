@@ -2,7 +2,7 @@
 spatial=/home/aaji/softs
 
 UNAME		= $(shell uname)
-OPTFLAGS	= -O2
+OPTFLAGS	= -O2 -Wno-write-strings
 INCBASE		= -I. -I/usr/local/include
 LIBBASE		= -lspatialindex -lgeos -L/usr/local/lib
 

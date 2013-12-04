@@ -24,7 +24,6 @@ bool assignIndex(int uid_idx, int geom_idx) {
 RTree::Data* parseInputPolygon(Geometry *p, id_type m_id) {
     double low[2], high[2];
     const Envelope * env = p->getEnvelopeInternal();
-
     low [0] = env->getMinX();
     low [1] = env->getMinY();
 
@@ -236,103 +235,132 @@ bool buildIndex(map<int,Geometry*> & geom_polygons) {
 }
 
 int main(int argc, char **argv) {
-    gengetopt_args_info args_info;
-    if (cmdline_parser (argc, argv, &args_info) != 0)
-    {
-	cerr << "ERROR: command line parsing error." <<endl;
-	exit(1) ;
+  gengetopt_args_info args_info;
+
+  if (argc < 2) {
+    // get query params from environment 
+    argc = 17;
+    argv = (char**)malloc(sizeof(char *) * 18);
+    argv[0] = "hgtiler";
+    argv[1] = "-w";
+    argv[2] = getenv("west");
+    argv[3] = "-s";
+    argv[4] = getenv("south");
+    argv[5] = "-n";
+    argv[6] = getenv("north");
+    argv[7] = "-e";
+    argv[8] = getenv("east");
+    argv[9] = "-x";
+    argv[10] = getenv("xsplit");
+    argv[11] = "-y";
+    argv[12] = getenv("ysplit");
+    argv[13] = "-u";
+    argv[14] = getenv("stuid");
+    argv[15] = "-g";
+    argv[16] = getenv("stgid");
+    if (! (argv[2] && argv[4] && argv[6] && argv[8] && argv[10] && argv[12] && argv[14] && argv[16])) {
+      std::cerr << "ERROR: command line arguments are not set correctly." << std::endl;
+      exit(1);
     }
+  }
 
-    double min_x = args_info.min_x_arg;
-    double max_x = args_info.max_x_arg;
-    double min_y = args_info.min_y_arg;
-    double max_y = args_info.max_y_arg;
-    int x_split = args_info.x_split_arg;
-    int y_split = args_info.y_split_arg;
-    int uid_idx  = args_info.uid_arg;
-    int geom_idx = args_info.geom_arg;
 
-    if (!assignIndex(uid_idx,geom_idx)) 
+  if (cmdline_parser (argc, argv, &args_info) != 0)
+  {
+    std::cerr << "ERROR: command line parsing error." << std::endl;
+    exit(1) ;
+  }
+
+  double min_x = args_info.min_x_arg;
+  double max_x = args_info.max_x_arg;
+  double min_y = args_info.min_y_arg;
+  double max_y = args_info.max_y_arg;
+  int x_split = args_info.x_split_arg;
+  int y_split = args_info.y_split_arg;
+  int uid_idx  = args_info.uid_arg;
+  int geom_idx = args_info.geom_arg;
+
+  if (!assignIndex(uid_idx,geom_idx)) 
+  {
+    std::cerr << "ERROR: index assigning has failed." <<std::endl;
+    exit(1); 
+  }
+
+  /* 
+     cerr << "min_x "<< min_x << endl; 
+     cerr << "max_x "<< max_x << endl; 
+     cerr << "min_y "<< min_y << endl; 
+     cerr << "max_y "<< max_y << endl; 
+     cerr << "x_split "<< x_split << endl; 
+     cerr << "y_split "<< y_split << endl; 
+     */
+
+  // initlize the GEOS ibjects
+  gf = new GeometryFactory(new PrecisionModel(),0);
+  wkt_reader= new WKTReader(gf);
+
+
+  // process input data 
+  map<int,Geometry*> geom_polygons;
+  string input_line;
+  vector<string> fields;
+  cerr << "Reading input from stdin..." <<endl; 
+  id_type id ; 
+  Geometry* geom ; 
+
+  while(cin && getline(cin, input_line) && !cin.eof()){
+    fields = parse(input_line);
+    if (fields[ID_IDX].length() <1 )
+      continue ;  // skip lines which has empty id field 
+    id = std::strtoul(fields[ID_IDX].c_str(), NULL, 0);
+
+    if (fields[GEOM_IDX].length() <2 )
     {
-	cerr << "ERROR: index assigning has failed." <<endl;
-	exit(1); 
-    }
-
-    /* 
-       cerr << "min_x "<< min_x << endl; 
-       cerr << "max_x "<< max_x << endl; 
-       cerr << "min_y "<< min_y << endl; 
-       cerr << "max_y "<< max_y << endl; 
-       cerr << "x_split "<< x_split << endl; 
-       cerr << "y_split "<< y_split << endl; 
-       */
-
-    // initlize the GEOS ibjects
-    gf = new GeometryFactory(new PrecisionModel(),0);
-    wkt_reader= new WKTReader(gf);
-
-
-    // process input data 
-    map<int,Geometry*> geom_polygons;
-    string input_line;
-    vector<string> fields;
-    cerr << "Reading input from stdin..." <<endl; 
-    id_type id ; 
-    Geometry* geom ; 
-
-    while(cin && getline(cin, input_line) && !cin.eof()){
-	fields = parse(input_line);
-	if (fields[ID_IDX].length() <1 )
-	    continue ;  // skip lines which has empty id field 
-	id = std::strtoul(fields[ID_IDX].c_str(), NULL, 0);
-
-	if (fields[GEOM_IDX].length() <2 )
-	{
 #ifndef NDEBUG
-	    cerr << "skipping record [" << id <<"]"<< endl;
+      cerr << "skipping record [" << id <<"]"<< endl;
 #endif
-	    continue ;  // skip lines which has empty geometry
-	}
-	// try {
-	geom = wkt_reader->read(fields[GEOM_IDX]);
-	//}
-	/*catch (...)
-	  {
-	  cerr << "WARNING: Record [id = " <<i << "] is not well formatted "<<endl;
-	  cerr << input_line << endl;
-	  continue ;
-	  }*/
-
-	geom_polygons[id]= geom;
-	id_polygon[id] = input_line; 
+      continue ;  // skip lines which has empty geometry
     }
-    // build spatial index for input polygons 
-    bool ret = buildIndex(geom_polygons);
-    if (ret == false) {
+    // try {
+    geom = wkt_reader->read(fields[GEOM_IDX]);
+    //}
+    /*catch (...)
+      {
+      cerr << "WARNING: Record [id = " <<i << "] is not well formatted "<<endl;
+      cerr << input_line << endl;
+      continue ;
+      }*/
 
-	cerr << "ERROR: Index building on tile structure has failed ." << std::endl;
-	return 1 ;
-    }
-    else 
+    geom_polygons[id]= geom;
+    id_polygon[id] = input_line; 
+  }
+  // build spatial index for input polygons 
+  bool ret = buildIndex(geom_polygons);
+  if (ret == false) {
+
+    cerr << "ERROR: Index building on tile structure has failed ." << std::endl;
+    return 1 ;
+  }
+  else 
 #ifndef NDEBUG  
-	cerr << "GRIDIndex Generated successfully." << endl;
+    cerr << "GRIDIndex Generated successfully." << endl;
 #endif
 
-    // genrate tile boundaries 
-    vector <Geometry*> geom_tiles= genTiles(min_x, max_x, min_y, max_y,x_split,y_split);
-    cerr << "Number of tiles: " << geom_tiles.size() << endl;
+  // genrate tile boundaries 
+  vector <Geometry*> geom_tiles= genTiles(min_x, max_x, min_y, max_y,x_split,y_split);
+  cerr << "Number of tiles: " << geom_tiles.size() << endl;
 
 
 
-    for(std::vector<Geometry*>::iterator it = geom_tiles.begin(); it != geom_tiles.end(); ++it) {
-	doQuery(*it);
-	emitHits(*it);
-    }
+  for(std::vector<Geometry*>::iterator it = geom_tiles.begin(); it != geom_tiles.end(); ++it) {
+    doQuery(*it);
+    emitHits(*it);
+  }
 
-    cout.flush();
-    cerr.flush();
-    cmdline_parser_free (&args_info); /* release allocated memory */
-    freeObjects();
-    return 0; // success
+  cout.flush();
+  cerr.flush();
+  cmdline_parser_free (&args_info); /* release allocated memory */
+  freeObjects();
+  return 0; // success
 }
 

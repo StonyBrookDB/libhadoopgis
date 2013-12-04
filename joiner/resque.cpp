@@ -355,63 +355,94 @@ int join()
 
 bool cleanup(){ return true; }
 
+bool extractParams(int argc, char** argv ){ 
+  /*  if (argc < 4) {
+      cerr << "usage: resque [predicate] [shape_idx 1] [shape_idx 2] " <<endl;
+      return 1;
+      } 
 
-int main(int argc, char** argv)
-{
-  if (argc < 4) {
-    cerr << "usage: resque [predicate] [shape_idx 1] [shape_idx 2] " <<endl;
-    return 1;
+      cerr << "argv[1] = " << argv[1] << endl;
+      cerr << "argv[2] = " << argv[2] << endl;
+      cerr << "argv[3] = " << argv[3] << endl;
+      */
+  char *predicate_str = NULL;
+  char *distance_str = NULL;
+  // get param from environment variables 
+  if (argc < 2) {
+    if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx1")) {
+      predicate_str = std::getenv("stpredicate");
+      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
+      shape_idx_2 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
+      distance_str = std::getenv("stexpdist");
+    } else {
+      std::cerr << "ERROR: query parameters are not set in environment variables." << endl;
+      return false;
+    }
+  } 
+  // get param from command line arguments
+  else if (argc >= 4){
+    predicate_str = argv[1];
+    if (argc >4)
+      predicate_str = argv[4];
+    shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+    shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+  }
+  else {
+    return false;
   }
 
-  //cerr << "argv[1] = " << argv[1] << endl;
-  //cerr << "argv[2] = " << argv[2] << endl;
-  //cerr << "argv[3] = " << argv[3] << endl;
-
-  shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
-  shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
-
-  if (strcmp(argv[1], "st_intersects") == 0) {
+  if (strcmp(predicate_str, "st_intersects") == 0) {
     JOIN_PREDICATE = ST_INTERSECTS;
   } 
-  else if (strcmp(argv[1], "st_touches") == 0) {
+  else if (strcmp(predicate_str, "st_touches") == 0) {
     JOIN_PREDICATE = ST_TOUCHES;
   } 
-  else if (strcmp(argv[1], "st_crosses") == 0) {
+  else if (strcmp(predicate_str, "st_crosses") == 0) {
     JOIN_PREDICATE = ST_CROSSES;
   } 
-  else if (strcmp(argv[1], "st_contains") == 0) {
+  else if (strcmp(predicate_str, "st_contains") == 0) {
     JOIN_PREDICATE = ST_CONTAINS;
   } 
-  else if (strcmp(argv[1], "st_adjacent") == 0) {
+  else if (strcmp(predicate_str, "st_adjacent") == 0) {
     JOIN_PREDICATE = ST_ADJACENT;
   } 
-  else if (strcmp(argv[1], "st_disjoint") == 0) {
+  else if (strcmp(predicate_str, "st_disjoint") == 0) {
     JOIN_PREDICATE = ST_DISJOINT;
   }
-  else if (strcmp(argv[1], "st_equals") == 0) {
+  else if (strcmp(predicate_str, "st_equals") == 0) {
     JOIN_PREDICATE = ST_EQUALS;
   }
-  else if (strcmp(argv[1], "st_dwithin") == 0) {
+  else if (strcmp(predicate_str, "st_dwithin") == 0) {
     JOIN_PREDICATE = ST_DWITHIN;
-    if (argc ==5)
-      expansion_distance = atof(argv[4]);
+    if (NULL != distance_str)
+      expansion_distance = atof(distance_str);
     else 
-      std::cerr << "ERROR: Missing distance measurement." << endl;
-    return 1; 
+      std::cerr << "ERROR: expansion distance is not set." << std::endl;
+    return false;
   }
-  else if (strcmp(argv[1], "st_within") == 0) {
+  else if (strcmp(predicate_str, "st_within") == 0) {
     JOIN_PREDICATE = ST_WITHIN;
   }
-  else if (strcmp(argv[1], "st_overlaps") == 0) {
+  else if (strcmp(predicate_str, "st_overlaps") == 0) {
     JOIN_PREDICATE = ST_OVERLAPS;
   }
   else {
     std::cerr << "unrecognized join predicate " << endl;
+    return false ;
+  }
+  return true;
+}
+
+// main body of the engine
+int main(int argc, char** argv)
+{
+  if (!extractParams(argc,argv)) {
+    std::cerr <<"ERROR: query parameter extraction error." << std::endl << "Please see documentations, or contact author." << std::endl;
     return 1;
   }
 
-
   if (!readSpatialInputGEOS()) {
+    std::cerr <<"ERROR: input data parsing error." << std::endl << "Please see documentations, or contact author." << std::endl;
     return 1;
   }
 
@@ -419,3 +450,4 @@ int main(int argc, char** argv)
   if (c==0) std::cout << std::endl;
   return 0;
 }
+
