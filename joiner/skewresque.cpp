@@ -41,7 +41,7 @@ const int ST_OVERLAPS = 10;
 const int DATABASE_ID_ONE = 1;
 const int DATABASE_ID_TWO = 2;
 
-const string cacheFile= "storelocation"; // ctrl+a
+const string cacheFile= "hgskewinput"; // ctrl+a
 
 // sepertors for parsing
 const string tab = "\t";
