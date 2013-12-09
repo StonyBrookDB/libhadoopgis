@@ -62,10 +62,10 @@ int shape_idx_1 = -1;
 int shape_idx_2 = -1;
 
 void tokenize ( const string& str, vector<string>& result,
-    const string& delimiters = " ,;:\t", 
-    const bool keepBlankFields=false,
-    const string& quote="\"\'"
-    )
+               const string& delimiters = " ,;:\t", 
+               const bool keepBlankFields=false,
+               const string& quote="\"\'"
+              )
 {
   // clear the vector
   if ( false == result.empty() )
@@ -196,14 +196,15 @@ bool readSpatialInputGEOS()
   GeometryFactory *gf = new GeometryFactory(new PrecisionModel(),OSM_SRID);
   WKTReader *wkt_reader = new WKTReader(gf);
   Geometry *poly = NULL; 
-
+  int i = 1; 
   while(cin && getline(cin, input_line) && !cin.eof()) {
+
 
     tokenize(input_line, fields,tab);
     poly = wkt_reader->read(fields[shape_idx_1]);
 
-    poly_set_one.push_back(poly);
-    data1.push_back(input_line);
+    poly_set_two.push_back(poly);
+    data2.push_back(input_line);
 
     fields.clear();
   }
@@ -216,7 +217,7 @@ bool readSpatialInputGEOS()
     tokenize(input_line, fields,tab);
     poly = wkt_reader->read(fields[shape_idx_2]);
 
-    poly_set_two.push_back(poly);
+    poly_set_one.push_back(poly);
     data1.push_back(input_line);
 
     fields.clear();
@@ -301,27 +302,27 @@ int join()
   // for each tile (key) in the input stream 
   try { 
 
-      int len1 = poly_set_one.size();
-      int len2 = poly_set_two.size();
+    int len1 = poly_set_one.size();
+    int len2 = poly_set_two.size();
 
-      // cerr << "len1 = " << len1 << endl;
-      // cerr << "len2 = " << len2 << endl;
+    // cerr << "len1 = " << len1 << endl;
+    // cerr << "len2 = " << len2 << endl;
 
-      // should use iterator, update later
-      for (int i = 0; i < len1 ; i++) {
-        const Geometry* geom1 = poly_set_one[i];
+    // should use iterator, update later
+    for (int i = 0; i < len1 ; i++) {
+      const Geometry* geom1 = poly_set_one[i];
 
-        for (int j = 0; j < len2 ; j++) {
-          const Geometry* geom2 = poly_set_two[j];
+      for (int j = 0; j < len2 ; j++) {
+        const Geometry* geom2 = poly_set_two[j];
 
-          // data[key][object_id] = input_line;
-          if (join_with_predicate(geom1, geom2, JOIN_PREDICATE))  {
-            cout << data1[i] << sep << data2[j] << endl; 
-            pairs++;
-          }
+        // data[key][object_id] = input_line;
+        if (join_with_predicate(geom1, geom2, JOIN_PREDICATE))  {
+          cout << data1[i] << sep << data2[j] << endl; 
+          pairs++;
+        }
 
-        } // end of for (int j = 0; j < len2 ; j++) 
-      } // end of for (int i = 0; i < len1 ; i++) 	
+      } // end of for (int j = 0; j < len2 ; j++) 
+    } // end of for (int i = 0; i < len1 ; i++) 	
   } // end of try
   catch (Tools::Exception& e) {
     std::cerr << "******ERROR******" << std::endl;
@@ -350,8 +351,8 @@ bool extractParams(int argc, char** argv ){
   if (argc < 2) {
     if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx1")) {
       predicate_str = std::getenv("stpredicate");
-      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 2) - 1;
-      shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 2) - 1;
+      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) - 1;
+      shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 10) - 1;
       distance_str = std::getenv("stexpdist");
     } else {
       std::cerr << "ERROR: query parameters are not set in environment variables." << endl;
@@ -363,12 +364,15 @@ bool extractParams(int argc, char** argv ){
     predicate_str = argv[1];
     if (argc >4)
       distance_str = argv[4];
-    shape_idx_1 = strtol(argv[2], NULL, 2) - 1;
-    shape_idx_2 = strtol(argv[3], NULL, 2) - 1;
+
+    shape_idx_1 = strtol(argv[2], NULL, 10) - 1;
+    shape_idx_2 = strtol(argv[3], NULL, 10) - 1;
   }
   else {
     return false;
   }
+
+  // std::cerr << "SHAPE INDEX: ["<< shape_idx_1 << "]"<<std::endl; 
 
   if (strcmp(predicate_str, "st_intersects") == 0) {
     JOIN_PREDICATE = ST_INTERSECTS;
@@ -420,13 +424,19 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  // std::cerr << "extractParams is fine. " << std::endl; 
+
   if (!readSpatialInputGEOS()) {
     std::cerr <<"ERROR: input data parsing error." << std::endl << "Please see documentations, or contact author." << std::endl;
     return 1;
   }
 
+  // std::cerr << "readSpatialInputGEOS is fine. " << std::endl; 
+
   int c = join();
-  if (c==0) std::cout << std::endl;
+  if (c==0) 
+    std::cout << std::endl;
+  std::cerr << "Number of tweets in retail stores " << c <<std::endl; 
   return 0;
 }
 
