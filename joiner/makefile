@@ -12,14 +12,19 @@ CC = gcc
 CXX = g++
 
 
-all: resque
+all: resque skewresque
 
 resque: resque.cpp
-	$(CXX) resque.cpp $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
+	$(CXX) $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
+
+skewresque: skewresque.cpp
+	$(CXX) -std=c++0x $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
+
 install:
 	mkdir -p $(prefix)/bin
 	cp resque $(prefix)/bin
+	cp skewresque $(prefix)/bin
 
 clean:
-	@rm -f resque
+	@rm -f resque skewresque
 
