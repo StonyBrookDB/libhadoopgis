@@ -19,32 +19,32 @@ cli-install.html)
 
 ### Source code compilation and configuration:
 
-1. Cluster Creation with Amazon EMR CLI:
-   *Create a cluster instance of EMR (EC2) and login into it using ssh via the AWS EMR CLI interface. This can be done in shell via:
+1. Cluster Creation with Amazon EMR CLI
+  * Create a cluster instance of EMR (EC2) and login into it using ssh via the AWS EMR CLI interface. This can be done in shell via:
 
-   ```bash 
+```bash 
    ./elastic-mapreduce --create --alive --name "compilerandtest" --num-instances=1 --master-instance-type=m1.medium
-   ```
+```
 
-
-   *ssh to the cluster with jobflow ID created with the step above:
-
-   ```bash
-   ./elastic-mapreduce --ssh –jobflow jobflow_id
-   ```
-
-2. Dowload and compile *libhadoopgis* on the cluster:
+  * ssh to the cluster with jobflow ID created with the step above:
 
 ```bash
-git clone https://github.com/ablimit/libhadoopgis
-cd tiler
-make
+   ./elastic-mapreduce --ssh –jobflow jobflow_id
+```
 
-cd joiner
-make
+2. Dowload and compile *libhadoopgis* on the cluster
+
+```bash
+  git clone https://github.com/ablimit/libhadoopgis
+  cd tiler
+  make
+
+  cd joiner
+  make
 ```
 
 3. Upload the libhadopgis folder to Amazon S3.
+
 
 ### Running *libhadoopgis* from AWS web interface
 1. Login to the AWS Management Console and select Elastic MapReduce.
