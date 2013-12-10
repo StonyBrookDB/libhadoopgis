@@ -98,6 +98,35 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     **Output location**: s3://cciemory/hadoopgis/sampleout/
     
     **Arguments**:  -numReduceTasks 8
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/8.png "tiling job")
+
+  * Spatial Join Query job:
+    For running spatial join queries, users need to specify extra argument. Namely, the `spatial predicate` and indexes of geometry fields in the dataset to be joined.
+    **Mapper**: location of tagmapper.py followed by arguments which are names of input files.
+    **Reducer**: (need to enter parameters): s3://cciemory/program/resque
+    **Input location**: The inputs file location on Amazon S3
+    **Output location**: The directory of the output should not exist on Amazon S3. It will be created by the EMR job.
+    **Arguments**: Specify the number of reduce tasks, additional input directory
+
+    Example:
+    **Mapper**: s3://cciemory/program/tagmapper.py s3://cciemory/hadoopgis/samplejoininput/dataset1.dat s3://cciemory/hadoopgis/samplejoininput/dataset2.dat
+    **Reducer**: s3://cciemory/program/resque st_intersects 2 4
+    **Input location**: s3://cciemory/hadoopgis/samplejoininput/
+    **Output location**: s3://cciemory/hadoopgis/samplejoinout/
+    **Arguments**: -numReduceTasks 20
+
+
+    Full list of supported spatial join predicates:
+    st_intersects
+    st_touches
+    st_crosses
+    st_contains
+    st_adjacent
+    st_disjoint
+    st_equals
+    st_dwithin 
+    st_within
+    st_overlaps
 
 
 ## Licence
