@@ -12,6 +12,9 @@ def main():
     for f in sys.argv:
       dic[f.strip()] = i
       i +=1
+
+    fullfilename = os.environ['map_input_file']
+
     if fullfilename.find('/') != -1:
         filename = fullfilename[fullfilename.rfind('/')+1:]
     else:

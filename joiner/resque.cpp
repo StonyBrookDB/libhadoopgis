@@ -384,8 +384,8 @@ bool extractParams(int argc, char** argv ){
     predicate_str = argv[1];
     if (argc >4)
       predicate_str = argv[4];
-    shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
-    shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+    shape_idx_1 = strtol(argv[2], NULL, 10) + 3;
+    shape_idx_2 = strtol(argv[3], NULL, 10) + 3;
   }
   else {
     return false;
