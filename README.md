@@ -54,10 +54,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/2.png "Create a cluster")
 
 3. Configure cluster name and location for log files.
-![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/3.png "Create a cluster")
-
-4. Configure cluster name and location for log files.
-![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/4.png "configure a cluster")
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/3.png "configure cluster")
 
 4. Select the compatible AMI version (corresponding to different version of Hadoop).
 
