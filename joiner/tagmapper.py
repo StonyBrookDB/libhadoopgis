@@ -1,4 +1,4 @@
-mport sys
+import sys
 import os
 
 def main():
@@ -21,3 +21,8 @@ def main():
     for line in sys.stdin:
         arr = line.strip().split("\t")
         print "\t".join((arr[0], str(tag), "\t".join(arr[1:])))
+
+    sys.stdout.flush()
+
+if __name__ == '__main__':
+    main()
