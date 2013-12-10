@@ -12,8 +12,7 @@ hadoopgis queries on Amazon EMR.
 - libspatialindex 1.8.x (x >= 0)
 
 ## AWS Dependecy (for CLI):
-Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-
-cli-install.html)
+Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-cli-install.html)
 
 ## Steps to Run on AWS EMR:
 
@@ -51,10 +50,34 @@ cli-install.html)
 1. Login to the AWS Management Console and select Elastic MapReduce.
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/1.png "Select EMR")
 
-2. 
+2. Create a cluster.
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/2.png "Create a cluster")
+
+3. Configure cluster name and location for log files.
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/3.png "Create a cluster")
+
+4. Configure cluster name and location for log files.
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/4.png "configure a cluster")
+
+4. Select the compatible AMI version (corresponding to different version of Hadoop).
+
+5. Remove Hive and Pig installation as we do not need them.
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/5.png "remove hive and pig")
+
+6. Select your preferred Hardware Configuration.
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/6.png "configure hardware")
+
+* The description of EC2 instances can be found on the [aws website](http://aws.amazon.com/ec2/instance-types/instance-details/).
+* Be aware of [The default settings] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/TaskConfiguration.html) for the numbers of mappers and reducers.  
+* Be advised that while you can pick any number of reducers, the maximum CPU cores available for computing might not be less than the number of reducers. In addition, the amount of memory available for mapper jobs will decrease as the number of reducers increases while the number of core and task instances does not change.
+
+7. Select a boostrap script (libspatialindex and geos and libhadoopgis installation).
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/7.png "bootstrap")
+
+8. 
 
 
 ## Licence
-All Hadopo-GIS software is freely available, and all source code 
+All libhadoopgis software is freely available, and all source code 
 is available under GNU public [copyleft](http://www.gnu.org/copyleft/ "copyleft") licenses.
 
