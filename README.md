@@ -63,10 +63,10 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 
 6. Select your preferred Hardware Configuration.
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/6.png "configure hardware")
-
   * The description of EC2 instances can be found on the [aws website](http://aws.amazon.com/ec2/instance-types/instance-details/).
   * Be aware of [The default settings] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/TaskConfiguration.html) for the numbers of mappers and reducers.  
   * Be advised that while you can pick any number of reducers, the maximum CPU cores available for computing might not be less than the number of reducers. In addition, the amount of memory available for mapper jobs will decrease as the number of reducers increases while the number of core and task instances does not change.
+
 
 7. Select a boostrap script (libspatialindex and geos and libhadoopgis installation).
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/7.png "bootstrap")
