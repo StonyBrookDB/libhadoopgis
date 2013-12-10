@@ -71,7 +71,10 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 7. Select a boostrap script (libspatialindex and geos and libhadoopgis installation).
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/7.png "bootstrap")
 
-8. Enter the locations of mappers, reducers, input and output directory, as well as other arguments.
+8. create a streaming job.
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/8.png "streaming")
+
+9. Enter the locations of mappers, reducers, input and output directory, as well as other arguments.
   * For tiling job (tiler):
 
     **Mapper**: s3://cciemory/program/cat
@@ -95,7 +98,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     **Output location**: s3://cciemory/hadoopgis/sampleout/
     
     **Arguments**:  -numReduceTasks 8
-![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/8.png "tiling job")
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/9.png "tiling job")
 
   * Spatial Join Query job:
     For running spatial join queries, users need to specify extra argument. Namely, the `spatial predicate` and indexes of geometry fields in the dataset to be joined.
