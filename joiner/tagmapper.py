@@ -1,6 +1,4 @@
-#! /usr/bin/python
-
-import sys
+mport sys
 import os
 
 def main():
@@ -10,19 +8,16 @@ def main():
         sys.exit(1)
 
     i = 0
-    dic = {} 
+    dic = {}
     for f in sys.argv:
       dic[f.strip()] = i
       i +=1
+    if fullfilename.find('/') != -1:
+        filename = fullfilename[fullfilename.rfind('/')+1:]
+    else:
+        filename = fullfilename
+    tag = dic[filename]
 
-# this has to be correspond to the file name
-    tag = dic[os.environ["map.input.file"]] 
-    
     for line in sys.stdin:
-        print "\t".join((tag,line.strip()))
-    
-    sys.stdout.flush()
-
-if __name__ == '__main__':
-    main()
-
+        arr = line.strip().split("\t")
+        print "\t".join((arr[0], str(tag), "\t".join(arr[1:])))

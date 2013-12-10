@@ -200,8 +200,8 @@ bool readSpatialInputGEOS()
   while(cin && getline(cin, input_line) && !cin.eof()) {
 
     tokenize(input_line, fields,tab);
-    database_id = atoi(fields[0].c_str());
-    tile_id = fields[1];
+    database_id = atoi(fields[1].c_str());
+    tile_id = fields[0];
     // object_id = fields[2];
 
     // cerr << "fields[0] = " << fields[0] << endl; 
