@@ -199,7 +199,7 @@ bool readSpatialInputGEOS()
 
   while(cin && getline(cin, input_line) && !cin.eof()) {
 
-    tokenize(input_line, fields,tab);
+    tokenize(input_line, fields,tab,true);
     database_id = atoi(fields[1].c_str());
     tile_id = fields[0];
     // object_id = fields[2];
@@ -208,7 +208,7 @@ bool readSpatialInputGEOS()
     // cerr << "fields[1] = " << fields[1] << endl; 
     // cerr << "fields[2] = " << fields[2] << endl; 
     // cerr << "fields[9] = " << fields[9] << endl; 
-
+    
     switch(database_id){
 
       case DATABASE_ID_ONE:
@@ -225,8 +225,8 @@ bool readSpatialInputGEOS()
     }
 
     std::stringstream ss;
-    for (size_t i =2 ; i < fields.size(); ++i) {
-      if (i != 2 ) {
+    for (size_t i =3 ; i < fields.size(); ++i) {
+      if (i > 3 ) {
         ss << tab;
       }
       ss << fields[i];
@@ -371,8 +371,8 @@ bool extractParams(int argc, char** argv ){
   if (argc < 2) {
     if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx1")) {
       predicate_str = std::getenv("stpredicate");
-      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 3;
-      shape_idx_2 = strtol(std::getenv("shapeidx1"), NULL, 10) + 3;
+      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
+      shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 10) + 2;
       distance_str = std::getenv("stexpdist");
     } else {
       std::cerr << "ERROR: query parameters are not set in environment variables." << endl;
@@ -384,8 +384,9 @@ bool extractParams(int argc, char** argv ){
     predicate_str = argv[1];
     if (argc >4)
       predicate_str = argv[4];
-    shape_idx_1 = strtol(argv[2], NULL, 10) + 3;
-    shape_idx_2 = strtol(argv[3], NULL, 10) + 3;
+    shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+    shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+    // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
   }
   else {
     return false;
