@@ -12,14 +12,46 @@ hadoopgis queries on Amazon EMR.
 - libspatialindex 1.8.x (x >= 0)
 
 ## AWS Dependecy (for CLI):
-Note: *If you are planning to use AWS web interface, you can ignore this section*
 Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-
 cli-install.html)
-Amazon S3 Client for file manipulation and/or transfer: [s3cmd] (http://s3tools.org/s3cmd)
+
+## Steps to Run on AWS EMR:
+
+### Source code compilation and configuration:
+
+1. Cluster Creation with Amazon EMR CLI:
+  * Create a cluster instance of EMR (EC2) and login into it using ssh via the AWS EMR CLI interface. This can be done in shell via:
+
+```bash 
+./elastic-mapreduce --create --alive --name "Compiling/editing purposes" --num-instances=1 --master-instance-type=m1.medium
+```
+
+
+  * ssh to the cluster with jobflow ID created with the step above:
+```bash
+./elastic-mapreduce --ssh –jobflow jobflow_id
+```
+
+2. Dowload and compile *libhadoopgis* on the cluster.
+```bash
+git clone https://github.com/ablimit/libhadoopgis
+cd tiler
+make
+
+cd joiner
+make
+```
+
+3. Upload the libhadopgis folder to Amazon S3.
+
+### Running *libhadoopgis* from AWS web interface
+1. Login to the AWS Management Console and select Elastic MapReduce.
+![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/1.png "Select EMR")
+
+2. 
+
 
 ## Licence
 All Hadopo-GIS software is freely available, and all source code 
 is available under GNU public [copyleft](http://www.gnu.org/copyleft/ "copyleft") licenses.
-
-## Example:
 
