@@ -76,18 +76,28 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 
 8. Enter the locations of mappers, reducers, input and output directory, as well as other arguments.
   * For tiling job (tiler):
-    *Mapper* s3://cciemory/program/cat
-    *Reducer* (need to enter parameters): s3://cciemory/program/hgtilerwitharg 
-    *Input location* valid location on Amazon s3.
-    *Output location* The directory of the output should not exist on S3. It will be created by the EMR job.
-    *Arguments* Specify the number of reduce tasks and other options as needed.
+
+    **Mapper**: s3://cciemory/program/cat
+    
+    **Reducer**: (need to enter parameters): s3://cciemory/program/hgtilerwitharg 
+    
+    **Input location**: valid location on Amazon s3.
+    
+    **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
+    
+    **Arguments**: Specify the number of reduce tasks and other options as needed.
 
     Example:
-    *Mapper* `s3://cciemory/program/cat`
-    *Reducer* `s3://cciemory/program/hgtilerwitharg -w 0 -s 0  -n 100000 -e 100000 -x 25 -y 25 -u 1 -g 11`
-    *Input location* s3://cciemory/hadoopgis/sampleinput/
-    *Output location* s3://cciemory/hadoopgis/sampleout/
-    *Arguments*  -numReduceTasks 8
+    
+    **Mapper**: `s3://cciemory/program/cat`
+    
+    **Reducer**: `s3://cciemory/program/hgtilerwitharg -w 0 -s 0  -n 100000 -e 100000 -x 25 -y 25 -u 1 -g 11`
+    
+    **Input location**: s3://cciemory/hadoopgis/sampleinput/
+    
+    **Output location**: s3://cciemory/hadoopgis/sampleout/
+    
+    **Arguments**:  -numReduceTasks 8
 
 
 ## Licence
