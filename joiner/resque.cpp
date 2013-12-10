@@ -371,8 +371,8 @@ bool extractParams(int argc, char** argv ){
   if (argc < 2) {
     if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx1")) {
       predicate_str = std::getenv("stpredicate");
-      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
-      shape_idx_2 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
+      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 3;
+      shape_idx_2 = strtol(std::getenv("shapeidx1"), NULL, 10) + 3;
       distance_str = std::getenv("stexpdist");
     } else {
       std::cerr << "ERROR: query parameters are not set in environment variables." << endl;
