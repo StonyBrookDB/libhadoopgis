@@ -23,16 +23,18 @@ cli-install.html)
   * Create a cluster instance of EMR (EC2) and login into it using ssh via the AWS EMR CLI interface. This can be done in shell via:
 
 ```bash 
-./elastic-mapreduce --create --alive --name "Compiling/editing purposes" --num-instances=1 --master-instance-type=m1.medium
+./elastic-mapreduce --create --alive --name "compilerandtest" --num-instances=1 --master-instance-type=m1.medium
 ```
 
 
   * ssh to the cluster with jobflow ID created with the step above:
+
 ```bash
-./elastic-mapreduce --ssh –jobflow jobflow_id
+   ./elastic-mapreduce --ssh –jobflow jobflow_id
 ```
 
-2. Dowload and compile *libhadoopgis* on the cluster.
+2. Dowload and compile *libhadoopgis* on the cluster:
+
 ```bash
 git clone https://github.com/ablimit/libhadoopgis
 cd tiler
