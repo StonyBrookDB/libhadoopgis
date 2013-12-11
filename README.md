@@ -164,7 +164,9 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     st_overlaps
     ```
 ### Optimization for Skewed Dataset
+
 If you have skewed dataset, you can use the `skewresque` to reduce your query time. For example, let's say you have a dataset _A_ and _B_, and size of _B_ is much smaller than _A_, and you want to perform a spatial join on them. Then you can skip the partition step altogether, and perform the query directly on the raw dataset. Please see example below.
+
 * Skewed spatial join:
    
   **Mapper**: location of the resqueskew program s3://cciemory/program/resqueskew
