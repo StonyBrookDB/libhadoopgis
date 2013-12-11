@@ -82,7 +82,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/8.png "streaming")
 
 9. Enter the locations of mappers, reducers, input and output directory, as well as other arguments. In this example we will partition two datasets and perform a spatial join on them.
-  * _Partition_ (tiling) step.
+  * **Partition** (tiling) step.
 
     **Mapper**: S3 location of hgdeduplicater.py
     
@@ -114,35 +114,40 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     Argument: -numReduceTasks 20
     ```
 
-  * Spatial Query step:
-    Spatial queries run on the partitioned data, i.e the output from tiling step. To run spatial join queries, users need to specify extra argument. Namely, the `spatial predicate` and indexes of geometry fields in the datasets to be joined.
-    **Mapper**: location of tagmapper.py on Amazon S3.
-    First argument: directory name of the first partitioned dataset.
-    Second argument: directory name of the second partitioned dataset.
+  * **Spatial Query** step:
+    Spatial queries run on the partitioned data, i.e the output from tiling step. To run spatial join queries, 
+    users need to specify extra argument. Namely, the `spatial predicate` and indexes of geometry fields in 
+    the datasets to be joined.
     
-    **Reducer**: s3://cciemorypublic/libhadoopgis/program/resque
-    First argument: type of operation (see below for supported type).
-    Second argument: index of the geometry field in the first dataset
-    Third parameter: index of the geometry field in the second dataset
-    Note: (these index of the geometry field are same as the positions of the geometry fields as in the partition step)
+     **Mapper**: location of tagmapper.py on Amazon S3.
+     
+      First argument: directory name of the first partitioned dataset.
+      Second argument: directory name of the second partitioned dataset.
     
-    **Input location**: S3 location of the partitioned data directory.
+     **Reducer**: s3://cciemorypublic/libhadoopgis/program/resque
+      
+      First argument: type of operation (see below for supported type).
     
-    **Output location**: S3 location for the output directory.
-Arguments: Specify the number of reduce tasks and the second input directory to
+      Second argument: index of the geometry field in the first dataset
+    
+      Third parameter: index of the geometry field in the second dataset
+      Note: (these index of the geometry field are same as the positions of the geometry fields as in the partition step)
+    
+     **Input location**: S3 location of the partitioned data directory.
+    
+     **Output location**: S3 location for the output directory.
+      Arguments: Specify the number of reduce tasks and the second input directory to
 
 
     Example:
     
-    **Mapper**: s3://cciemorypublic/libhadoopgis/program/tagmapper.py outputtiler1 outputtiler2
-    
-    **Reducer**: s3://cciemorypublic/libhadoopgis/program/resque st_intersects 5 5
-    
-    **Input location**: s3://cciemorypublic/libhadoopgis/outputtiler1/
-    
-    **Output location**: s3://cciemorypublic/libhadoopgis/sampleout/
-    
-    **Arguments**: -input s3://cciemorypublic/libhadoopgis/outputtiler2/ -numReduceTasks 10
+    ```bash
+    Mapper: s3://cciemorypublic/libhadoopgis/program/tagmapper.py outputtiler1 outputtiler2
+    Reducer: s3://cciemorypublic/libhadoopgis/program/resque st_intersects 5 5
+    Input location: s3://cciemorypublic/libhadoopgis/outputtiler1/
+    Output location: s3://cciemorypublic/libhadoopgis/sampleout/
+    Argument: -input s3://cciemorypublic/libhadoopgis/outputtiler2/ -numReduceTasks 10
+    ```
     
     Full list of supported spatial join predicates:
     
