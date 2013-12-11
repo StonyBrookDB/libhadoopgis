@@ -84,30 +84,30 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 9. Enter the locations of mappers, reducers, input and output directory, as well as other arguments. In this example we will partition two datasets and perform a spatial join on them.
   * Partition (tiling) step.
 
-   **Mapper**: S3 location of hgdeduplicater.py
-   Argument: cat
+    **Mapper**: S3 location of hgdeduplicater.py
+    Argument: cat
    
-   **Reducer**: hgtiler
-   Arguments: -w minX –s minY – n maxY –e maxX (The minimum and maximum coordinates of the spatial universe)
-   Arguments: -x numberOfXsplits –y numberOfYsplits –u uid –g gid
-   Argument: -u : index of the uid field (counting from 1)
-   Argument: -g : index of the geometry field (counting from 1)
+    **Reducer**: hgtiler
+    Arguments: -w minX –s minY – n maxY –e maxX (The minimum and maximum coordinates of the spatial universe)
+    Arguments: -x numberOfXsplits –y numberOfYsplits –u uid –g gid
+    Argument: -u : index of the uid field (counting from 1)
+    Argument: -g : index of the geometry field (counting from 1)
    
-   **Input location**: Location of the first data file on Amazon S3
+    **Input location**: Location of the first data file on Amazon S3
    
-   **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
+    **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
    
-   **Other Arguments**: Specify the number of reduce tasks and other options as needed.
+    **Other Arguments**: Specify the number of reduce tasks and other options as needed.
   
-   Example: for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into 25 by 25 grids.
+    Example: for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into 25 by 25 grids.
    
-   ```bash
-   Mapper: s3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat 
-   Reducer: s3://cciemorypublic/libhadoopgis/program/hgtiler -w -180 -s -90 -n 90 -e 180 -x 25 -y 25 -u 1 -g 5
-   Input location: s3://cciemorypublic/libhadoopgis/sampledata/osm.1.dat
-   Output location: s3://cciemorypublic/libhadoopgis/outputtiler1/
-   Argument: -numReduceTasks 20
-   ```
+    ```bash
+    Mapper: s3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat 
+    Reducer: s3://cciemorypublic/libhadoopgis/program/hgtiler -w -180 -s -90 -n 90 -e 180 -x 25 -y 25 -u 1 -g 5
+    Input location: s3://cciemorypublic/libhadoopgis/sampledata/osm.1.dat
+    Output location: s3://cciemorypublic/libhadoopgis/outputtiler1/
+    Argument: -numReduceTasks 20
+    ```
 
   * Spatial Query step:
     Spatial queries run on the partitioned data, i.e the output from tiling step. To run spatial join queries, users need to specify extra argument. Namely, the `spatial predicate` and indexes of geometry fields in the datasets to be joined.
