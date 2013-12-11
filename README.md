@@ -44,11 +44,14 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   ```
 
 3. Upload the libhadopgis binaries to Amazon S3.
+  
   Example:
+  
+  ```bash
   aws s3 cp hgtiler s3://yourbucket/hadoopgis/program/
   aws s3 cp resque s3://yourbucket/hadoopgis/program/
   aws s3 cp resqueskew s3://yourbucket/hadoopgis/program/
-
+  ```
 
 
 ### Running *libhadoopgis* from AWS web interface
