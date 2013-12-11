@@ -163,6 +163,25 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     st_within
     st_overlaps
     ```
+### Optimization for Skewd Dataset
+If you have skewed dataset, you can use the `skewresque` to reduce your query time. For example, let's say you have a dataset _A_ and _B_, and size of _B_ is much smaller than _A_, and you want to perform a spatial join on them. Then you can skip the partition step altogether, and perform the query directly on the raw dataset. Please see example below.
+ * Skewed spatial join:
+   **Mapper**: location of the resqueskew program s3://cciemory/program/resqueskew
+    
+    Arguments: Similar to resque arguments above.
+   **Reducer**: No reducer is needed.
+   **Input location**: Location of the larger input file (tsv)
+   **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
+   
+    Arguments: Specify the number of reduce tasks, additional input directory (as for standard input) and path to the small file used as the other operand in the join.
+   ```bash
+   Mapper: s3://cciemorypublic/libhadoopgis/program/skewresque st_intersects 2 1
+   Reducer: None (Enter None)
+   Input location: s3://cciemorypublic/libhadoopgis/sampledata/tweet.dump.tsv
+   Output location: s3://cciemorypublic/libhadoopgis/skewjoinout/
+   Arguments: -cacheFile s3://cciemorypublic/libhadoopgis/sampledata/fulton.tsv#hgskewinput -numReduceTasks 0
+   ```
+
 
 ## Licence
 All libhadoopgis software is freely available, and all source code 
