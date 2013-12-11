@@ -85,12 +85,17 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   * _Partition_ (tiling) step.
 
     **Mapper**: S3 location of hgdeduplicater.py
-    Argument: cat
+    
+    _Argument_: cat
    
     **Reducer**: hgtiler
+    
     Arguments: -w minX –s minY – n maxY –e maxX (The minimum and maximum coordinates of the spatial universe)
+    
     Arguments: -x numberOfXsplits –y numberOfYsplits –u uid –g gid
+    
     Argument: -u : index of the uid field (counting from 1)
+    
     Argument: -g : index of the geometry field (counting from 1)
    
     **Input location**: Location of the first data file on Amazon S3
