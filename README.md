@@ -170,8 +170,11 @@ If you have skewed dataset, you can use the `skewresque` to reduce your query ti
    **Mapper**: location of the resqueskew program s3://cciemory/program/resqueskew
     
     Arguments: Similar to resque arguments above.
+   
    **Reducer**: No reducer is needed.
+   
    **Input location**: Location of the larger input file (tsv)
+  
    **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
    
     Arguments: Specify the number of reduce tasks, additional input directory (as for standard input) and path to the small file used as the other operand in the join.
