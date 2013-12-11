@@ -14,7 +14,7 @@ hadoopgis queries on Amazon EMR.
 ## AWS Dependecy (for CLI):
 Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-cli-install.html)
 
-## Steps to Run on AWS EMR:
+## Steps to run from AWS EMR web interface:
 
 ### Source code compilation and configuration:
 
@@ -22,7 +22,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   1. Create a cluster instance of EMR (EC2) and login into it using ssh via the AWS EMR CLI interface.
 
   ```bash 
-  ./elastic-mapreduce --create --alive --name "compilerandtest" --num-instances=1 --master-instance-type=m1.medium
+  ./elastic-mapreduce --create --alive --name "compilerMachine" --num-instances=1 --master-instance-type=m1.medium
   ```
 
   2. ssh to the cluster with jobflow ID created with the step above:
@@ -43,7 +43,12 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   make
   ```
 
-3. Upload the libhadopgis folder to Amazon S3.
+3. Upload the libhadopgis binaries to Amazon S3.
+  Example:
+  aws s3 cp hgtiler s3://yourbucket/hadoopgis/program/
+  aws s3 cp resque s3://yourbucket/hadoopgis/program/
+  aws s3 cp resqueskew s3://yourbucket/hadoopgis/program/
+
 
 
 ### Running *libhadoopgis* from AWS web interface
@@ -74,58 +79,66 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 8. create a streaming job.
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/8.png "streaming")
 
-9. Enter the locations of mappers, reducers, input and output directory, as well as other arguments.
-  * For tiling job (tiler):
+9. Enter the locations of mappers, reducers, input and output directory, as well as other arguments. In this example we will partition two datasets and perform a spatial join on them.
+  * Partition (tiling) step.
 
-    **Mapper**: s3://cciemory/program/cat
+   **Mapper**: S3 location of hgdeduplicater.py
+   Argument: cat
+   
+   **Reducer**: hgtiler
+   Arguments: -w minX –s minY – n maxY –e maxX (The minimum and maximum coordinates of the spatial universe)
+   Arguments: -x numberOfXsplits –y numberOfYsplits –u uid –g gid
+   Argument: -u : index of the uid field (counting from 1)
+   Argument: -g : index of the geometry field (counting from 1)
+   
+   **Input location**: Location of the first data file on Amazon S3
+   
+   **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
+   
+   **Other Arguments**: Specify the number of reduce tasks and other options as needed.
+  
+   Example: for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into 25 by 25 grids.
+   
+   ```bash
+   Mapper: s3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat 
+   Reducer: s3://cciemorypublic/libhadoopgis/program/hgtiler -w -180 -s -90 -n 90 -e 180 -x 25 -y 25 -u 1 -g 5
+   Input location: s3://cciemorypublic/libhadoopgis/sampledata/osm.1.dat
+   Output location: s3://cciemorypublic/libhadoopgis/outputtiler1/
+   Argument: -numReduceTasks 20
+   ```
+
+  * Spatial Query step:
+    Spatial queries run on the partitioned data, i.e the output from tiling step. To run spatial join queries, users need to specify extra argument. Namely, the `spatial predicate` and indexes of geometry fields in the datasets to be joined.
+    **Mapper**: location of tagmapper.py on Amazon S3.
+    First argument: directory name of the first partitioned dataset.
+    Second argument: directory name of the second partitioned dataset.
     
-    **Reducer**: (need to enter parameters): s3://cciemory/program/hgtilerwitharg 
+    **Reducer**: s3://cciemorypublic/libhadoopgis/program/resque
+    First argument: type of operation (see below for supported type).
+    Second argument: index of the geometry field in the first dataset
+    Third parameter: index of the geometry field in the second dataset
+    Note: (these index of the geometry field are same as the positions of the geometry fields as in the partition step)
     
-    **Input location**: valid location on Amazon s3.
+    **Input location**: S3 location of the partitioned data directory.
     
-    **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
-    
-    **Arguments**: Specify the number of reduce tasks and other options as needed.
+    **Output location**: S3 location for the output directory.
+Arguments: Specify the number of reduce tasks and the second input directory to
+
 
     Example:
     
-    **Mapper**: `s3://cciemory/program/cat`
+    **Mapper**: s3://cciemorypublic/libhadoopgis/program/tagmapper.py outputtiler1 outputtiler2
     
-    **Reducer**: `s3://cciemory/program/hgtilerwitharg -w 0 -s 0  -n 100000 -e 100000 -x 25 -y 25 -u 1 -g 11`
+    **Reducer**: s3://cciemorypublic/libhadoopgis/program/resque st_intersects 5 5
     
-    **Input location**: s3://cciemory/hadoopgis/sampleinput/
+    **Input location**: s3://cciemorypublic/libhadoopgis/outputtiler1/
     
-    **Output location**: s3://cciemory/hadoopgis/sampleout/
+    **Output location**: s3://cciemorypublic/libhadoopgis/sampleout/
     
-    **Arguments**:  -numReduceTasks 8
-![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/9.png "tiling job")
-
-  * Spatial Join Query job:
-    For running spatial join queries, users need to specify extra argument. Namely, the `spatial predicate` and indexes of geometry fields in the dataset to be joined.
+    **Arguments**: -input s3://cciemorypublic/libhadoopgis/outputtiler2/ -numReduceTasks 10
     
-    **Mapper**: location of tagmapper.py followed by arguments which are names of input files.
-    
-    **Reducer**: (need to enter parameters): s3://cciemory/program/resque
-    
-    **Input location**: The inputs file location on Amazon S3
-    
-    **Output location**: The directory of the output should not exist on Amazon S3. It will be created by the EMR job.
-    
-    **Arguments**: Specify the number of reduce tasks, additional input directory
-
-    Example:
-    
-    **Mapper**: s3://cciemory/program/tagmapper.py s3://cciemory/hadoopgis/samplejoininput/dataset1.dat s3://cciemory/hadoopgis/samplejoininput/dataset2.dat
-    
-    **Reducer**: s3://cciemory/program/resque st_intersects 2 4
-    
-    **Input location**: s3://cciemory/hadoopgis/samplejoininput/
-    
-    **Output location**: s3://cciemory/hadoopgis/samplejoinout/
-    
-    **Arguments**: -numReduceTasks 20
-
     Full list of supported spatial join predicates:
+    
     ```bash
     st_intersects
     st_touches
