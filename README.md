@@ -47,9 +47,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   
   Example:
   ```bash
-  aws s3 cp hgtiler s3://yourbucket/hadoopgis/program/
-  aws s3 cp resque s3://yourbucket/hadoopgis/program/
-  aws s3 cp resqueskew s3://yourbucket/hadoopgis/program/
+  hadoop fs -pu libhadoopgis s3://yourbucket/libhadoopgis
   ```
 
 
@@ -107,10 +105,10 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     Example: for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into 25 by 25 grids.
    
     ```bash
-    Mapper: s3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat 
-    Reducer: s3://cciemorypublic/libhadoopgis/program/hgtiler -w -180 -s -90 -n 90 -e 180 -x 25 -y 25 -u 1 -g 5
-    Input location: s3://cciemorypublic/libhadoopgis/sampledata/osm.1.dat
-    Output location: s3://cciemorypublic/libhadoopgis/outputtiler1/
+    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat 
+    Reducer: s3://yourbucket/libhadoopgis/tiler/hgtiler -w -180 -s -90 -n 90 -e 180 -x 25 -y 25 -u 1 -g 5
+    Input location: s3://yourbucket/libhadoopgis/sampledata/osm.1.dat
+    Output location: s3://yourbucket/outputtiler1/
     Argument: -numReduceTasks 20
     ```
 
@@ -124,7 +122,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
       First argument: directory name of the first partitioned dataset.
       Second argument: directory name of the second partitioned dataset.
     
-     **Reducer**: s3://cciemorypublic/libhadoopgis/program/resque
+     **Reducer**: s3://yourbucket/libhadoopgis/joiner/resque
       
       First argument: type of operation (see below for supported type).
     
@@ -142,11 +140,11 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     Example:
     
     ```bash
-    Mapper: s3://cciemorypublic/libhadoopgis/program/tagmapper.py outputtiler1 outputtiler2
-    Reducer: s3://cciemorypublic/libhadoopgis/program/resque st_intersects 5 5
-    Input location: s3://cciemorypublic/libhadoopgis/outputtiler1/
-    Output location: s3://cciemorypublic/libhadoopgis/sampleout/
-    Argument: -input s3://cciemorypublic/libhadoopgis/outputtiler2/ -numReduceTasks 10
+    Mapper: s3://yourbucket/libhadoopgis/joiner/tagmapper.py outputtiler1 outputtiler2
+    Reducer: s3://yourbucket/libhadoopgis/joiner/resque st_intersects 5 5
+    Input location: s3://yourbucket/libhadoopgis/outputtiler1/
+    Output location: s3://yourbucket/libhadoopgis/sampleout/
+    Argument: -input s3://yourbucket/libhadoopgis/outputtiler2/ -numReduceTasks 10
     ```
     
     Full list of supported spatial join predicates:
@@ -183,11 +181,11 @@ If you have skewed dataset, you can use the `skewresque` to reduce your query ti
   Arguments: Specify the number of reduce tasks, additional input directory (as for standard input) and path 
   to the small file used as the other operand in the join.
   ```bash
-  Mapper: s3://cciemorypublic/libhadoopgis/program/skewresque st_intersects 2 1
+  Mapper: s3://yourbucket/libhadoopgis/joiner/skewresque st_intersects 2 1
   Reducer: None (Enter None)
-  Input location: s3://cciemorypublic/libhadoopgis/sampledata/tweet.dump.tsv
-  Output location: s3://cciemorypublic/libhadoopgis/skewjoinout/
-  Arguments: -cacheFile s3://cciemorypublic/libhadoopgis/sampledata/fulton.tsv#hgskewinput -numReduceTasks 0
+  Input location: s3://yourbucket/libhadoopgis/sampledata/tweet.dump.tsv
+  Output location: s3://yourbucket/libhadoopgis/skewjoinout/
+  Arguments: -cacheFile s3://yourbucket/libhadoopgis/sampledata/fulton.tsv#hgskewinput -numReduceTasks 0
   ```
 
 
