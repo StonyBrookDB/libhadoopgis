@@ -82,7 +82,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 ![alt text](https://github.com/ablimit/libhadoopgis/raw/master/documentation/images/8.png "streaming")
 
 9. Enter the locations of mappers, reducers, input and output directory, as well as other arguments. In this example we will partition two datasets and perform a spatial join on them.
-  * Partition (tiling) step.
+  * _Partition_ (tiling) step.
 
     **Mapper**: S3 location of hgdeduplicater.py
     Argument: cat
