@@ -178,7 +178,7 @@ reducecmd="resque st_${predicate} ${gidxa} ${gidxb}"
 #reducecmd='s3://cciemorypublic/libhadoopgis/program/hgtiler -w '${west}' -s '${south}' -n '${north}' -e ${east} -x ${xsplit} -y ${ysplit} -u ${uidx} -g ${gidxa}'
 
 # Tiling first data file
-ruby ./elastic-mapreduce --create --alive --stream --num-instances=4 --instance-type=m1.medium --master-instance-type=m1.medium --name "Joiner MR CLI"  --mapper 's3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat' --reducer "s3://cciemorypublic/libhadoopgis/program/hgtiler -w ${west} -s ${south} -n ${north} -e ${east} -x ${xsplit} -y ${ysplit} -u ${uidx} -g ${gidxa}" --input ${inputdira} --output ${outputtiler1}  --jobconf mapred.reduce.tasks=${worker} --bootstrap-action "s3://cciemorypublic/libhadoopgis/bootstrap/bootcopygeosspatial.sh" | rev | cut -d " " -f 1 | rev > tmpjobid
+ruby ./elastic-mapreduce --create --alive --stream --num-instances=4 --instance-type=m1.medium --master-instance-type=m1.medium --name "Joiner MR CLI"  --mapper 's3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat' --reducer "s3://cciemorypublic/libhadoopgis/program/hgtiler -w ${west} -s ${south} -n ${north} -e ${east} -x ${xsplit} -y ${ysplit} -u ${uidx} -g ${gidxa}" --input ${inputdira} --output ${outputtiler1}  --jobconf mapred.reduce.tasks=${reducecount} --bootstrap-action "s3://cciemorypublic/libhadoopgis/bootstrap/bootcopygeosspatial.sh" | rev | cut -d " " -f 1 | rev > tmpjobid
 
 read jobid < tmpjobid
 
@@ -187,10 +187,10 @@ read jobid < tmpjobid
 # Wait for previous step to complete
 #ruby ./elastic-mapreduce -j ${jobid} --wait-for-steps
 
-ruby ./elastic-mapreduce --jobflow ${jobid} --stream --mapper 's3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat' --reducer "s3://cciemorypublic/libhadoopgis/program/hgtiler -w ${west} -s ${south} -n ${north} -e ${east} -x ${xsplit} -y ${ysplit} -u ${uidx} -g ${gidxb}" --input ${inputdirb} --output ${outputtiler2}/  --jobconf mapred.reduce.tasks=${worker}
+ruby ./elastic-mapreduce --jobflow ${jobid} --stream --mapper 's3://cciemorypublic/libhadoopgis/program/hgdeduplicater.py cat' --reducer "s3://cciemorypublic/libhadoopgis/program/hgtiler -w ${west} -s ${south} -n ${north} -e ${east} -x ${xsplit} -y ${ysplit} -u ${uidx} -g ${gidxb}" --input ${inputdirb} --output ${outputtiler2}/  --jobconf mapred.reduce.tasks=${reducecount}
 
 reducecmd="s3://cciemorypublic/libhadoopgis/program/resque st_${predicate} ${gidxa} ${gidxb}"
 # Add the join step
-ruby ./elastic-mapreduce --jobflow ${jobid} --stream --args "-input ${inputdirb}"  --mapper 's3://cciemorypublic/libhadoopgis/program/tagmapper.py outputtiler1 outputtiler2' --reducer ${reducecmd} --input ${inputdira} --output ${outputdir}  --jobconf mapred.reduce.tasks=${worker}
+ruby ./elastic-mapreduce --jobflow ${jobid} --stream --args "-input ${outputtiler2}"  --mapper 's3://cciemorypublic/libhadoopgis/program/tagmapper.py outputtiler1 outputtiler2' --reducer ${reducecmd} --input ${outputtiler1} --output ${outputdir}  --jobconf mapred.reduce.tasks=${reducecount}
 
 
