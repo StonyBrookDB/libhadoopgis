@@ -28,7 +28,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   2. ssh to the cluster with jobflow ID created with the step above:
 
   ```bash
-  ./elastic-mapreduce --ssh –jobflow jobflow_id
+  ./elastic-mapreduce --ssh jobflow_id
   ```
 
 
