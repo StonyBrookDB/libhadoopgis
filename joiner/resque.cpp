@@ -45,17 +45,17 @@ const string tab = "\t";
 const string sep = "\x02"; // ctrl+a
 
 // data type declaration 
-typedef map<string, map<int, std::vector<Geometry*> > > polymap;
-typedef map<string, map<int, std::vector<string> > > datamap;
-
-polymap polydata;
-datamap data;
+map<int, std::vector<Geometry*> > polydata;
+map<int, std::vector<string> > rawdata;
 
 
 double expansion_distance = 0.0;
 int JOIN_PREDICATE = 0;
 int shape_idx_1 = -1;
 int shape_idx_2 = -1;
+
+int join();
+void releaseShapeMem();
 
 void tokenize ( const string& str, vector<string>& result,
     const string& delimiters = " ,;:\t", 
@@ -184,7 +184,7 @@ void tokenize ( const string& str, vector<string>& result,
   }
 }
 
-bool readSpatialInputGEOS() 
+bool readnjoin() 
 {
   string input_line;
   string tile_id ;
@@ -195,7 +195,8 @@ bool readSpatialInputGEOS()
 
   GeometryFactory *gf = new GeometryFactory(new PrecisionModel(),OSM_SRID);
   WKTReader *wkt_reader = new WKTReader(gf);
-  Geometry *poly = NULL; 
+  Geometry *poly = NULL;
+  string previd = "";
 
   while(cin && getline(cin, input_line) && !cin.eof()) {
 
@@ -224,6 +225,7 @@ bool readSpatialInputGEOS()
         return false;
     }
 
+    /*
     std::stringstream ss;
     for (size_t i =3 ; i < fields.size(); ++i) {
       if (i > 3 ) {
@@ -231,17 +233,49 @@ bool readSpatialInputGEOS()
       }
       ss << fields[i];
     }
+*/
+    if (previd.compare(tile_id) !=0 && previd.size() > 0 ) {
+     int  pairs = join();
+     std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
 
-    polydata[tile_id][database_id].push_back(poly);
-    data[tile_id][database_id].push_back(ss.str());
+     std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
+     releaseShapeMem();
+     polydata[DATABASE_ID_ONE].clear();
+     polydata[DATABASE_ID_TWO].clear();
+     rawdata[DATABASE_ID_ONE].clear();
+     rawdata[DATABASE_ID_TWO].clear();
+    }
+      polydata[database_id].push_back(poly);
+      rawdata[database_id].push_back(fields[2]);
+      previd = tile_id; 
 
     fields.clear();
   }
+    // last tile
+     int  pairs = join();
+     std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
+
+     std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
+     releaseShapeMem();
+     polydata[DATABASE_ID_ONE].clear();
+     polydata[DATABASE_ID_TWO].clear();
+     rawdata[DATABASE_ID_ONE].clear();
+     rawdata[DATABASE_ID_TWO].clear();
 
   // cerr << "polydata size = " << polydata.size() << endl;
   return true;
 }
 
+void releaseShapeMem(){
+    int len = polydata[DATABASE_ID_ONE].size();
+    for (int i = 0; i < len ; i++) {
+      delete polydata[DATABASE_ID_ONE][i];
+    }
+    len = polydata[DATABASE_ID_TWO].size();
+    for (int i = 0; i < len ; i++) {
+      delete polydata[DATABASE_ID_TWO][i];
+    }
+}
 bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const int jp){
   bool flag = false ; 
   const Envelope * env1 = geom1->getEnvelopeInternal();
@@ -310,39 +344,34 @@ int join()
 {
   // cerr << "---------------------------------------------------" << endl;
   int pairs = 0; 
-  string key;
-  polymap::iterator iter;
 
   // for each tile (key) in the input stream 
   try { 
-    for (iter = polydata.begin(); iter != polydata.end(); iter++) {
-      key = iter->first;
 
-      std::vector<Geometry*>  poly_set_one = polydata[key][DATABASE_ID_ONE];
-      std::vector<Geometry*>  poly_set_two = polydata[key][DATABASE_ID_TWO];
+    std::vector<Geometry*>  & poly_set_one = polydata[DATABASE_ID_ONE];
+    std::vector<Geometry*>  & poly_set_two = polydata[DATABASE_ID_TWO];
 
-      int len1 = poly_set_one.size();
-      int len2 = poly_set_two.size();
+    int len1 = poly_set_one.size();
+    int len2 = poly_set_two.size();
 
-      // cerr << "len1 = " << len1 << endl;
-      // cerr << "len2 = " << len2 << endl;
+    // cerr << "len1 = " << len1 << endl;
+    // cerr << "len2 = " << len2 << endl;
 
-      // should use iterator, update later
-      for (int i = 0; i < len1 ; i++) {
-        const Geometry* geom1 = poly_set_one[i];
+    // should use iterator, update later
+    for (int i = 0; i < len1 ; i++) {
+      const Geometry* geom1 = poly_set_one[i];
 
-        for (int j = 0; j < len2 ; j++) {
-          const Geometry* geom2 = poly_set_two[j];
+      for (int j = 0; j < len2 ; j++) {
+        const Geometry* geom2 = poly_set_two[j];
 
-          // data[key][object_id] = input_line;
-          if (join_with_predicate(geom1, geom2, JOIN_PREDICATE))  {
-            cout << data[key][DATABASE_ID_ONE][i] << sep << data[key][DATABASE_ID_TWO][j] << endl; 
-            pairs++;
-          }
+        // data[key][object_id] = input_line;
+        if (join_with_predicate(geom1, geom2, JOIN_PREDICATE))  {
+          cout << rawdata[DATABASE_ID_ONE][i] << tab << rawdata[DATABASE_ID_TWO][j] << endl; 
+          pairs++;
+        }
 
-        } // end of for (int j = 0; j < len2 ; j++) 
-      } // end of for (int i = 0; i < len1 ; i++) 	
-    } // end of for (iter = polydata.begin(); iter != polydata.end(); iter++)
+      } // end of for (int j = 0; j < len2 ; j++) 
+    } // end of for (int i = 0; i < len1 ; i++) 	
   } // end of try
   catch (Tools::Exception& e) {
     std::cerr << "******ERROR******" << std::endl;
@@ -442,13 +471,15 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  if (!readSpatialInputGEOS()) {
+  if (!readnjoin()) {
     std::cerr <<"ERROR: input data parsing error." << std::endl << "Please see documentations, or contact author." << std::endl;
     return 1;
   }
-
-  int c = join();
-  if (c==0) std::cout << std::endl;
+  /*
+     int c = join();
+     if (c==0) std::cout << std::endl;
+     std::cerr <<"Processed pairs: [" <<c << "]" <<std::endl;
+     */
   return 0;
 }
 
