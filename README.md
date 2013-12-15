@@ -47,7 +47,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   
   Example:
   ```bash
-  hadoop fs -pu libhadoopgis s3://yourbucket/libhadoopgis
+  hadoop fs -put libhadoopgis s3://yourbucket/libhadoopgis
   ```
 
 
@@ -102,13 +102,41 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
    
     **Other Arguments**: Specify the number of reduce tasks and other options as needed.
   
-    Example: for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into 100 by 100 grids.
+    Example 1: 
+      for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into a 100 by 100 grid.
    
     ```bash
     Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat 
     Reducer: s3://yourbucket/libhadoopgis/tiler/hgtiler -w -180 -s -90 -n 90 -e 180 -x 100 -y 100 -u 1 -g 5
     Input location: s3://yourbucket/libhadoopgis/sampledata/osm.1.dat
     Output location: s3://yourbucket/outputtiler1/
+    Argument: -numReduceTasks 20
+    ```
+    
+    ```bash
+    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat 
+    Reducer: s3://yourbucket/libhadoopgis/tiler/hgtiler -w -180 -s -90 -n 90 -e 180 -x 100 -y 100 -u 1 -g 5
+    Input location: s3://yourbucket/libhadoopgis/sampledata/osm.2.dat
+    Output location: s3://yourbucket/outputtiler2/
+    Argument: -numReduceTasks 20
+    ```
+    
+    Example 2:
+      for a sample of Pathology (PAIS) data (coordinates range: x: [0, 100000], y: [0, 100000]) – the geometry is the 11th field on every line. uid is the 1st field. and we want to split the data into a 20 by 20 grid.
+    
+    ```bash
+    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat 
+    Reducer: s3://yourbucket/libhadoopgis/tiler/hgtiler -w 0 -s 0 -n 100000 -e 100000 -x 20 -y 20 -u 1 -g 11
+    Input location: s3://yourbucket/libhadoopgis/sampledata/pais.1.dat
+    Output location: s3://yourbucket/outputpaistiler1/
+    Argument: -numReduceTasks 20
+    ```
+    
+    ```bash
+    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat 
+    Reducer: s3://yourbucket/libhadoopgis/tiler/hgtiler -w 0 -s 0 -n 100000 -e 100000 -x 20 -y 20 -u 1 -g 11
+    Input location: s3://yourbucket/libhadoopgis/sampledata/pais.2.dat
+    Output location: s3://yourbucket/outputpaistiler2/
     Argument: -numReduceTasks 20
     ```
 
@@ -137,7 +165,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
       Arguments: Specify the number of reduce tasks and the second input directory to
 
 
-    Example:
+    Example - OSM dataset:
     
     ```bash
     Mapper: s3://yourbucket/libhadoopgis/joiner/tagmapper.py outputtiler1 outputtiler2
@@ -145,6 +173,16 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     Input location: s3://yourbucket/libhadoopgis/outputtiler1/
     Output location: s3://yourbucket/libhadoopgis/sampleout/
     Argument: -input s3://yourbucket/libhadoopgis/outputtiler2/ -numReduceTasks 10
+    ```
+    
+    Example - OSM dataset:
+    
+    ```bash
+    Mapper: s3://yourbucket/libhadoopgis/joiner/tagmapper.py outputpaistiler1 outputpaistiler2
+    Reducer: s3://yourbucket/libhadoopgis/joiner/resque st_intersects 11 11
+    Input location: s3://yourbucket/libhadoopgis/outputpaistiler1/
+    Output location: s3://yourbucket/libhadoopgis/sampleout/
+    Argument: -input s3://yourbucket/libhadoopgis/outputpaistiler2/ -numReduceTasks 10
     ```
     
     Full list of supported spatial join predicates:
