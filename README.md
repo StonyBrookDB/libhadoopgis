@@ -33,8 +33,27 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
 
 
 2. Dowload and compile *libhadoopgis* on the cluster.
-
+  This step only need to be done every time you start the cluster. Therefore, you can put this in the _boostrap action_. 
   ```bash
+  sudo apt-get -y install cmake
+  wget http://download.osgeo.org/geos/geos-3.3.9.tar.bz2
+  tar xvf geos-3.3.9.tar.bz2
+  cd geos-3.3.9
+  mkdir Release
+  cd Release
+  cmake ..
+  make
+  sudo make install
+
+  wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.1.tar.bz2
+  tar xvf spatialindex-src-1.8.1.tar.bz2
+  cd spatialindex-src-1.8.1
+  mkdir Release
+  cd Release
+  cmake ..
+  make
+  sudo make install
+  
   git clone https://github.com/ablimit/libhadoopgis
   cd tiler
   make
@@ -42,12 +61,13 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
   cd joiner
   make
   ```
+  However, this bootstrap is heavy weight. A lightweight bootstrap action would be: compile and install the dependencies once; copy libraries to S3 (`hadoop fs -put /usr/local/lib/lib* s3://_yourbucket_/libs/`); and create a bootstrap action which only downloads these libraries from S3 to the cluster `bootstrap.light.sh`.
 
 3. Upload the libhadopgis binaries to Amazon S3.
   
   Example:
   ```bash
-  hadoop fs -put libhadoopgis s3://yourbucket/libhadoopgis
+  s3cmd sync libhadoopgis s3://yourbucket/libhadoopgis
   ```
 
 
