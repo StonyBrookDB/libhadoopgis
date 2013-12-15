@@ -175,7 +175,7 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
     Argument: -input s3://yourbucket/libhadoopgis/outputtiler2/ -numReduceTasks 10
     ```
     
-    Example - OSM dataset:
+    Example - PAIS dataset:
     
     ```bash
     Mapper: s3://yourbucket/libhadoopgis/joiner/tagmapper.py outputpaistiler1 outputpaistiler2
