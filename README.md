@@ -102,11 +102,11 @@ Amazon Elastic MapReduce Command Line Interface: [Amazon EMR CLI] (http://docs.a
    
     **Other Arguments**: Specify the number of reduce tasks and other options as needed.
   
-    Example: for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into 25 by 25 grids.
+    Example: for a sample of OpenStreetMap data (OSM) (coordinates range: x: [-180, 180], y: [-90, 90]) – the geometry is the 5th field on every line. uid is the 1st field. and we want to split the data into 100 by 100 grids.
    
     ```bash
     Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat 
-    Reducer: s3://yourbucket/libhadoopgis/tiler/hgtiler -w -180 -s -90 -n 90 -e 180 -x 25 -y 25 -u 1 -g 5
+    Reducer: s3://yourbucket/libhadoopgis/tiler/hgtiler -w -180 -s -90 -n 90 -e 180 -x 100 -y 100 -u 1 -g 5
     Input location: s3://yourbucket/libhadoopgis/sampledata/osm.1.dat
     Output location: s3://yourbucket/outputtiler1/
     Argument: -numReduceTasks 20
@@ -168,7 +168,8 @@ If you have skewed dataset, you can use the `skewresque` to reduce your query ti
 
 * Skewed spatial join:
    
-  **Mapper**: location of the resqueskew program s3://cciemory/program/resqueskew
+  **Mapper**: location of the resqueskew program s3://cciemorypublic/libhadoopgis/program/skewresque
+(Visible to public)
     
   Arguments: Similar to resque arguments above.
    
