@@ -58,10 +58,10 @@ int join();
 void releaseShapeMem();
 
 void tokenize ( const string& str, vector<string>& result,
-    const string& delimiters = " ,;:\t", 
-    const bool keepBlankFields=false,
-    const string& quote="\"\'"
-    )
+               const string& delimiters = " ,;:\t", 
+               const bool keepBlankFields=false,
+               const string& quote="\"\'"
+              )
 {
   // clear the vector
   if ( false == result.empty() )
@@ -209,7 +209,7 @@ bool readnjoin()
     // cerr << "fields[1] = " << fields[1] << endl; 
     // cerr << "fields[2] = " << fields[2] << endl; 
     // cerr << "fields[9] = " << fields[9] << endl; 
-    
+
     switch(database_id){
 
       case DATABASE_ID_ONE:
@@ -226,55 +226,55 @@ bool readnjoin()
     }
 
     /*
-    std::stringstream ss;
-    for (size_t i =3 ; i < fields.size(); ++i) {
-      if (i > 3 ) {
-        ss << tab;
-      }
-      ss << fields[i];
-    }
-*/
+       std::stringstream ss;
+       for (size_t i =3 ; i < fields.size(); ++i) {
+       if (i > 3 ) {
+       ss << tab;
+       }
+       ss << fields[i];
+       }
+       */
     if (previd.compare(tile_id) !=0 && previd.size() > 0 ) {
-     int  pairs = join();
-     std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
+      int  pairs = join();
+      std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
 
-     std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
-     releaseShapeMem();
-     polydata[DATABASE_ID_ONE].clear();
-     polydata[DATABASE_ID_TWO].clear();
-     rawdata[DATABASE_ID_ONE].clear();
-     rawdata[DATABASE_ID_TWO].clear();
+      std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
+      releaseShapeMem();
+      polydata[DATABASE_ID_ONE].clear();
+      polydata[DATABASE_ID_TWO].clear();
+      rawdata[DATABASE_ID_ONE].clear();
+      rawdata[DATABASE_ID_TWO].clear();
     }
-      polydata[database_id].push_back(poly);
-      rawdata[database_id].push_back(fields[2]);
-      previd = tile_id; 
+    polydata[database_id].push_back(poly);
+    rawdata[database_id].push_back(fields[2]);
+    previd = tile_id; 
 
     fields.clear();
   }
-    // last tile
-     int  pairs = join();
-     std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
+  // last tile
+  int  pairs = join();
+  std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
 
-     std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
-     releaseShapeMem();
-     polydata[DATABASE_ID_ONE].clear();
-     polydata[DATABASE_ID_TWO].clear();
-     rawdata[DATABASE_ID_ONE].clear();
-     rawdata[DATABASE_ID_TWO].clear();
+  std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
+  releaseShapeMem();
+  polydata[DATABASE_ID_ONE].clear();
+  polydata[DATABASE_ID_TWO].clear();
+  rawdata[DATABASE_ID_ONE].clear();
+  rawdata[DATABASE_ID_TWO].clear();
 
-  // cerr << "polydata size = " << polydata.size() << endl;
+  // cer << "polydata size = " << polydata.size() << endl;
   return true;
 }
 
 void releaseShapeMem(){
-    int len = polydata[DATABASE_ID_ONE].size();
-    for (int i = 0; i < len ; i++) {
-      delete polydata[DATABASE_ID_ONE][i];
-    }
-    len = polydata[DATABASE_ID_TWO].size();
-    for (int i = 0; i < len ; i++) {
-      delete polydata[DATABASE_ID_TWO][i];
-    }
+  int len = polydata[DATABASE_ID_ONE].size();
+  for (int i = 0; i < len ; i++) {
+    delete polydata[DATABASE_ID_ONE][i];
+  }
+  len = polydata[DATABASE_ID_TWO].size();
+  for (int i = 0; i < len ; i++) {
+    delete polydata[DATABASE_ID_TWO][i];
+  }
 }
 bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const int jp){
   bool flag = false ; 
@@ -396,29 +396,57 @@ bool extractParams(int argc, char** argv ){
       */
   char *predicate_str = NULL;
   char *distance_str = NULL;
-  // get param from environment variables 
-  if (argc < 2) {
-    if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx1")) {
-      predicate_str = std::getenv("stpredicate");
-      shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
-      shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 10) + 2;
-      distance_str = std::getenv("stexpdist");
-    } else {
-      std::cerr << "ERROR: query parameters are not set in environment variables." << endl;
+
+  switch (argc) {
+    // get param from environment variables 
+    case 1:
+      if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx1")) {
+        predicate_str = std::getenv("stpredicate");
+        shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
+        shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 10) + 2;
+        distance_str = std::getenv("stexpdist");
+      } else {
+        std::cerr << "ERROR: query parameters are not set in environment variables." << endl;
+        return false;
+      }
+      break;
+    
+    // predicate only queries
+    case 2:
       return false;
-    }
+      break;
+    
+    // single argument predicates -- self join
+    case 3:
+      predicate_str = argv[1];
+      shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      break;
+
+    // two argument predicates
+    case 4: 
+      predicate_str = argv[1];
+      shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      if (strcmp(predicate_str, "st_dwithin") == 0) {
+        distance_str = argv[3];
+      }
+      else {
+        shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+      }
+
   } 
-  // get param from command line arguments
-  else if (argc >= 4){
-    predicate_str = argv[1];
-    if (argc >4)
-      predicate_str = argv[4];
-    shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
-    shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
-    // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
-  }
-  else {
-    return false;
+      // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
+
+      break;
+    case 5: 
+      predicate_str = argv[1];
+      shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+      distance_str = argv[4];
+      // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
+
+      break;
+    default:
+      return false;
   }
 
   if (strcmp(predicate_str, "st_intersects") == 0) {
