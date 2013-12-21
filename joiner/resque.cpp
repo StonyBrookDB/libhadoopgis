@@ -1,10 +1,11 @@
 #include <iostream>
-#include <vector>
-#include <string>
 #include <cstring>
 #include <cmath>
 #include <map>
 #include <cstdlib> 
+
+// tokenizer 
+#include "tokenizer.h"
 
 // geos
 #include <geos/geom/PrecisionModel.h>
@@ -17,7 +18,6 @@
 
 #include <spatialindex/SpatialIndex.h>
 
-using namespace std;
 using namespace geos;
 using namespace geos::io;
 using namespace geos::geom;
@@ -48,156 +48,46 @@ const string sep = "\x02"; // ctrl+a
 map<int, std::vector<Geometry*> > polydata;
 map<int, std::vector<string> > rawdata;
 
+struct query_op { 
+  int JOIN_PREDICATE;
+  int shape_idx_1;
+  int shape_idx_2;
+  int join_cardinality;
+  double expansion_distance;
+} stop; // st opeartor 
 
-double expansion_distance = 0.0;
-int JOIN_PREDICATE = 0;
-int shape_idx_1 = -1;
-int shape_idx_2 = -1;
+void init();
+int joinBucket();
+int mJoinQuery(); 
+void releaseShapeMem(const int k);
+int extractParams(int argc, char** argv );
 
-int join();
-void releaseShapeMem();
-
-void tokenize ( const string& str, vector<string>& result,
-               const string& delimiters = " ,;:\t", 
-               const bool keepBlankFields=false,
-               const string& quote="\"\'"
-              )
-{
-  // clear the vector
-  if ( false == result.empty() )
-  {
-    result.clear();
-  }
-
-  // you must be kidding
-  if (delimiters.empty())
-    return ;
-
-  string::size_type pos = 0; // the current position (char) in the string
-  char ch = 0; // buffer for the current character
-  char delimiter = 0;	// the buffer for the delimiter char which
-  // will be added to the tokens if the delimiter
-  // is preserved
-  char current_quote = 0; // the char of the current open quote
-  bool quoted = false; // indicator if there is an open quote
-  string token;  // string buffer for the token
-  bool token_complete = false; // indicates if the current token is
-  // read to be added to the result vector
-  string::size_type len = str.length();  // length of the input-string
-
-  // for every char in the input-string
-  while ( len > pos )
-  {
-    // get the character of the string and reset the delimiter buffer
-    ch = str.at(pos);
-    delimiter = 0;
-
-    bool add_char = true;
-
-    // check ...
-
-    // ... if the delimiter is a quote
-    if ( false == quote.empty())
-    {
-      // if quote chars are provided and the char isn't protected
-      if ( string::npos != quote.find_first_of(ch) )
-      {
-        // if not quoted, set state to open quote and set
-        // the quote character
-        if ( false == quoted )
-        {
-          quoted = true;
-          current_quote = ch;
-
-          // don't add the quote-char to the token
-          add_char = false;
-        }
-        else // if quote is open already
-        {
-          // check if it is the matching character to close it
-          if ( current_quote == ch )
-          {
-            // close quote and reset the quote character
-            quoted = false;
-            current_quote = 0;
-
-            // don't add the quote-char to the token
-            add_char = false;
-          }
-        } // else
-      }
-    }
-
-    if ( false == delimiters.empty() && false == quoted )
-    {
-      // if ch is delemiter 
-      if ( string::npos != delimiters.find_first_of(ch) )
-      {
-        token_complete = true;
-        // don't add the delimiter to the token
-        add_char = false;
-      }
-    }
-
-    // add the character to the token
-    if ( true == add_char )
-    {
-      // add the current char
-      token.push_back( ch );
-    }
-
-    // add the token if it is complete
-    // if ( true == token_complete && false == token.empty() )
-    if ( true == token_complete )
-    {
-      if (token.empty())
-      {
-        if (keepBlankFields)
-          result.push_back("");
-      }
-      else 
-        // add the token string
-        result.push_back( token );
-
-      // clear the contents
-      token.clear();
-
-      // build the next token
-      token_complete = false;
-
-    }
-    // repeat for the next character
-    ++pos;
-  } // while
-
-  /* 
-     cout << "ch: " << (int) ch << endl;
-     cout << "token_complete: " << token_complete << endl;
-     cout << "token: " << token<< endl;
-     */
-  // add the final token
-  if ( false == token.empty() ) {
-    result.push_back( token );
-  }
-  else if(keepBlankFields && string::npos != delimiters.find_first_of(ch) ){
-    result.push_back("");
-  }
+void init(){
+ // initlize query operator 
+  stop.expansion_distance = 0.0;
+  stop.JOIN_PREDICATE = 0;
+  stop.shape_idx_1 = 0;
+  stop.shape_idx_2 = 0 ;
+  stop.join_cardinality = 0;
 }
 
-bool readnjoin() 
+int mJoinQuery()
 {
   string input_line;
   string tile_id ;
   string value;
   vector<string> fields;
-
   int database_id = 0;
 
   GeometryFactory *gf = new GeometryFactory(new PrecisionModel(),OSM_SRID);
   WKTReader *wkt_reader = new WKTReader(gf);
   Geometry *poly = NULL;
   string previd = "";
+  
+  int tile_counter =0;
 
+  std::cerr <<"Bucketinfo:[ID] |A|x|B|=|R|" <<std::endl;
+  
   while(cin && getline(cin, input_line) && !cin.eof()) {
 
     tokenize(input_line, fields,tab,true);
@@ -213,38 +103,26 @@ bool readnjoin()
     switch(database_id){
 
       case DATABASE_ID_ONE:
-        poly = wkt_reader->read(fields[shape_idx_1]);
+        poly = wkt_reader->read(fields[stop.shape_idx_1]);
         break;
 
       case DATABASE_ID_TWO:
-        poly = wkt_reader->read(fields[shape_idx_2]);
+        poly = wkt_reader->read(fields[stop.shape_idx_2]);
         break;
 
       default:
         std::cerr << "wrong database id : " << database_id << endl;
         return false;
     }
-
-    /*
-       std::stringstream ss;
-       for (size_t i =3 ; i < fields.size(); ++i) {
-       if (i > 3 ) {
-       ss << tab;
-       }
-       ss << fields[i];
-       }
-       */
+    
     if (previd.compare(tile_id) !=0 && previd.size() > 0 ) {
-      int  pairs = join();
-      std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
-
-      std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
-      releaseShapeMem();
-      polydata[DATABASE_ID_ONE].clear();
-      polydata[DATABASE_ID_TWO].clear();
-      rawdata[DATABASE_ID_ONE].clear();
-      rawdata[DATABASE_ID_TWO].clear();
+      int  pairs = joinBucket();
+      std::cerr <<"T[" << previd << "] |" << polydata[DATABASE_ID_ONE].size() << "|x|" << polydata[DATABASE_ID_TWO].size() << "|=|" << pairs << "|" <<std::endl;
+      tile_counter++; 
+      releaseShapeMem(stop.join_cardinality);
     }
+
+    // populate the bucket for join 
     polydata[database_id].push_back(poly);
     rawdata[database_id].push_back(fields[2]);
     previd = tile_id; 
@@ -252,30 +130,30 @@ bool readnjoin()
     fields.clear();
   }
   // last tile
-  int  pairs = join();
-  std::cerr <<  polydata[DATABASE_ID_ONE].size() <<  tab << polydata[DATABASE_ID_TWO].size() <<std::endl;
-
-  std::cerr <<"Tile ID : [" << previd << "] [" << pairs << "]" <<std::endl;
-  releaseShapeMem();
-  polydata[DATABASE_ID_ONE].clear();
-  polydata[DATABASE_ID_TWO].clear();
-  rawdata[DATABASE_ID_ONE].clear();
-  rawdata[DATABASE_ID_TWO].clear();
-
-  // cer << "polydata size = " << polydata.size() << endl;
-  return true;
+  int  pairs = joinBucket();
+  std::cerr <<"T[" << previd << "] |" << polydata[DATABASE_ID_ONE].size() << "|x|" << polydata[DATABASE_ID_TWO].size() << "|=|" << pairs << "|" <<std::endl;
+  tile_counter++;
+  releaseShapeMem(stop.join_cardinality);
+  
+  return tile_counter;
 }
 
-void releaseShapeMem(){
-  int len = polydata[DATABASE_ID_ONE].size();
-  for (int i = 0; i < len ; i++) {
-    delete polydata[DATABASE_ID_ONE][i];
+void releaseShapeMem(const int k ){
+  if (k <=0)
+    return ;
+  for (int j =0 ; j <k ;j++ )
+  {
+    int delete_index = j+1 ;
+    int len = polydata[delete_index].size();
+
+    for (int i = 0; i < len ; i++) 
+      delete polydata[delete_index][i];
+    polydata[delete_index].clear();
+    rawdata[delete_index].clear();
   }
-  len = polydata[DATABASE_ID_TWO].size();
-  for (int i = 0; i < len ; i++) {
-    delete polydata[DATABASE_ID_TWO][i];
-  }
+
 }
+
 bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const int jp){
   bool flag = false ; 
   const Envelope * env1 = geom1->getEnvelopeInternal();
@@ -317,12 +195,12 @@ bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const 
 
     case ST_DWITHIN:
       buffer_op1 = new BufferOp(geom1);
-      buffer_op2 = new BufferOp(geom2);
+      // buffer_op2 = new BufferOp(geom2);
 
-      geom_buffer1 = buffer_op1->getResultGeometry(expansion_distance);
-      geom_buffer2 = buffer_op2->getResultGeometry(expansion_distance);
+      geom_buffer1 = buffer_op1->getResultGeometry(stop.expansion_distance);
+      // geom_buffer2 = buffer_op2->getResultGeometry(expansion_distance);
 
-      flag = join_with_predicate(geom_buffer1,geom_buffer2, ST_INTERSECTS);
+      flag = join_with_predicate(geom_buffer1,geom2, ST_INTERSECTS);
       break;
 
     case ST_WITHIN:
@@ -340,16 +218,19 @@ bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const 
   return flag; 
 }
 
-int join() 
+int joinBucket() 
 {
   // cerr << "---------------------------------------------------" << endl;
-  int pairs = 0; 
+  int pairs = 0;
+  bool selfjoin = stop.join_cardinality ==1 ? true : false ;
+  int idx1 = DATABASE_ID_ONE ; 
+  int idx2 = selfjoin ? DATABASE_ID_ONE : DATABASE_ID_TWO ;
 
   // for each tile (key) in the input stream 
   try { 
 
-    std::vector<Geometry*>  & poly_set_one = polydata[DATABASE_ID_ONE];
-    std::vector<Geometry*>  & poly_set_two = polydata[DATABASE_ID_TWO];
+    std::vector<Geometry*>  & poly_set_one = polydata[idx1];
+    std::vector<Geometry*>  & poly_set_two = polydata[idx2];
 
     int len1 = poly_set_one.size();
     int len2 = poly_set_two.size();
@@ -362,10 +243,11 @@ int join()
       const Geometry* geom1 = poly_set_one[i];
 
       for (int j = 0; j < len2 ; j++) {
-        const Geometry* geom2 = poly_set_two[j];
+        if (i == j && selfjoin) 
+          continue ; 
 
-        // data[key][object_id] = input_line;
-        if (join_with_predicate(geom1, geom2, JOIN_PREDICATE))  {
+        const Geometry* geom2 = poly_set_two[j];
+        if (join_with_predicate(geom1, geom2, stop.JOIN_PREDICATE))  {
           cout << rawdata[DATABASE_ID_ONE][i] << tab << rawdata[DATABASE_ID_TWO][j] << endl; 
           pairs++;
         }
@@ -382,65 +264,64 @@ int join()
   return pairs ;
 }
 
-bool cleanup(){ return true; }
-
-bool extractParams(int argc, char** argv ){ 
-  /*  if (argc < 4) {
-      cerr << "usage: resque [predicate] [shape_idx 1] [shape_idx 2] " <<endl;
-      return 1;
-      } 
-
-      cerr << "argv[1] = " << argv[1] << endl;
-      cerr << "argv[2] = " << argv[2] << endl;
-      cerr << "argv[3] = " << argv[3] << endl;
-      */
+int extractParams(int argc, char** argv ){ 
+  /*
+     cerr << "argv[1] = " << argv[1] << endl;
+     cerr << "argv[2] = " << argv[2] << endl;
+     cerr << "argv[3] = " << argv[3] << endl;
+     */
   char *predicate_str = NULL;
   char *distance_str = NULL;
 
   switch (argc) {
     // get param from environment variables 
     case 1:
+      // discouraged to use env vars. Many instance of resuqe may run in the same system. 
       if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx1")) {
         predicate_str = std::getenv("stpredicate");
-        shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
-        shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 10) + 2;
+        stop.shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
+        stop.shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 10) + 2;
         distance_str = std::getenv("stexpdist");
       } else {
-        std::cerr << "ERROR: query parameters are not set in environment variables." << endl;
+        std::cerr << "ERROR: query parameters are not set in environment variables." << std::endl;
         return false;
       }
       break;
-    
-    // predicate only queries
+
+      // predicate only queries
     case 2:
+      std::cerr << "ERROR: predicate only queries are not supported yet." << std::endl;
       return false;
       break;
-    
-    // single argument predicates -- self join
+
+      // single argument predicates -- self join
     case 3:
       predicate_str = argv[1];
-      shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      stop.shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      stop.join_cardinality +=1 ; 
       break;
 
-    // two argument predicates
+      // two argument predicates
     case 4: 
       predicate_str = argv[1];
-      shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      stop.shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      stop.join_cardinality +=1 ; 
       if (strcmp(predicate_str, "st_dwithin") == 0) {
         distance_str = argv[3];
       }
       else {
-        shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+        stop.shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+        stop.join_cardinality +=1 ; 
       }
-
-  } 
+      break;
       // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
 
-      break;
     case 5: 
       predicate_str = argv[1];
-      shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
-      shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+      stop.shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
+      stop.join_cardinality +=1 ; 
+      stop.shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
+      stop.join_cardinality +=1 ; 
       distance_str = argv[4];
       // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
 
@@ -450,64 +331,79 @@ bool extractParams(int argc, char** argv ){
   }
 
   if (strcmp(predicate_str, "st_intersects") == 0) {
-    JOIN_PREDICATE = ST_INTERSECTS;
+    stop.JOIN_PREDICATE = ST_INTERSECTS;
   } 
   else if (strcmp(predicate_str, "st_touches") == 0) {
-    JOIN_PREDICATE = ST_TOUCHES;
+    stop.JOIN_PREDICATE = ST_TOUCHES;
   } 
   else if (strcmp(predicate_str, "st_crosses") == 0) {
-    JOIN_PREDICATE = ST_CROSSES;
+    stop.JOIN_PREDICATE = ST_CROSSES;
   } 
   else if (strcmp(predicate_str, "st_contains") == 0) {
-    JOIN_PREDICATE = ST_CONTAINS;
+    stop.JOIN_PREDICATE = ST_CONTAINS;
   } 
   else if (strcmp(predicate_str, "st_adjacent") == 0) {
-    JOIN_PREDICATE = ST_ADJACENT;
+    stop.JOIN_PREDICATE = ST_ADJACENT;
   } 
   else if (strcmp(predicate_str, "st_disjoint") == 0) {
-    JOIN_PREDICATE = ST_DISJOINT;
+    stop.JOIN_PREDICATE = ST_DISJOINT;
   }
   else if (strcmp(predicate_str, "st_equals") == 0) {
-    JOIN_PREDICATE = ST_EQUALS;
+    stop.JOIN_PREDICATE = ST_EQUALS;
   }
   else if (strcmp(predicate_str, "st_dwithin") == 0) {
-    JOIN_PREDICATE = ST_DWITHIN;
+    stop.JOIN_PREDICATE = ST_DWITHIN;
     if (NULL != distance_str)
-      expansion_distance = atof(distance_str);
+      stop.expansion_distance = atof(distance_str);
     else 
       std::cerr << "ERROR: expansion distance is not set." << std::endl;
     return false;
   }
   else if (strcmp(predicate_str, "st_within") == 0) {
-    JOIN_PREDICATE = ST_WITHIN;
+    stop.JOIN_PREDICATE = ST_WITHIN;
   }
   else if (strcmp(predicate_str, "st_overlaps") == 0) {
-    JOIN_PREDICATE = ST_OVERLAPS;
+    stop.JOIN_PREDICATE = ST_OVERLAPS;
   }
   else {
-    std::cerr << "unrecognized join predicate " << endl;
-    return false ;
+    std::cerr << "unrecognized join predicate " << std::endl;
+    return false;
   }
+
   return true;
 }
 
 // main body of the engine
 int main(int argc, char** argv)
 {
+  /*  if (argc < 4) {
+      cerr << "usage: resque [predicate] [shape_idx 1] [shape_idx 2] [distance]" <<endl;
+      return 1;
+      } */
+  init();
+  int c = 0 ;
   if (!extractParams(argc,argv)) {
     std::cerr <<"ERROR: query parameter extraction error." << std::endl << "Please see documentations, or contact author." << std::endl;
     return 1;
   }
 
-  if (!readnjoin()) {
-    std::cerr <<"ERROR: input data parsing error." << std::endl << "Please see documentations, or contact author." << std::endl;
-    return 1;
+  switch (stop.join_cardinality){
+    case 1:
+    case 2:
+      c = mJoinQuery();
+      // std::cerr <<"ERROR: input data parsing error." << std::endl << "Please see documentations, or contact author." << std::endl;
+      break;
+
+    default:
+      std::cerr <<"ERROR: join cardinality does not match engine capacity." << std::endl ;
+      return 1;
+      break;
   }
-  /*
-     int c = join();
-     if (c==0) std::cout << std::endl;
-     std::cerr <<"Processed pairs: [" <<c << "]" <<std::endl;
-     */
+  std::cerr <<"Query Load: [" << c << "]" <<std::endl;
+  
+  cout.flush();
+  cerr.flush();
+  
   return 0;
 }
 
