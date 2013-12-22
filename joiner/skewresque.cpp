@@ -274,9 +274,10 @@ bool extractParams(int argc, char** argv ){
     JOIN_PREDICATE = ST_DWITHIN;
     if (NULL != distance_str)
       expansion_distance = atof(distance_str);
-    else 
+    else {
       std::cerr << "ERROR: expansion distance is not set." << std::endl;
-    return false;
+      return false;
+    }
   }
   else if (strcmp(predicate_str, "st_within") == 0) {
     JOIN_PREDICATE = ST_WITHIN;
