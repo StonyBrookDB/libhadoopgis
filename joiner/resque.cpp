@@ -91,7 +91,8 @@ int mJoinQuery()
   vector<string> fields;
   int sid = 0;
 
-  GeometryFactory *gf = new GeometryFactory(new PrecisionModel(),OSM_SRID);
+  PrecisionModel *pm = new PrecisionModel();
+  GeometryFactory *gf = new GeometryFactory(pm,OSM_SRID);
   WKTReader *wkt_reader = new WKTReader(gf);
   Geometry *poly = NULL;
   string previd = "";
@@ -125,7 +126,7 @@ int mJoinQuery()
 
     if (fields[index].size() < 4) // this number 4 is really arbitrary
       continue ; // empty spatial object 
-    
+
     try { 
       poly = wkt_reader->read(fields[index]);
     }
@@ -153,6 +154,11 @@ int mJoinQuery()
   std::cerr <<"T[" << previd << "] |" << polydata[SID_1].size() << "|x|" << polydata[SID_2].size() << "|=|" << pairs << "|" <<std::endl;
   tile_counter++;
   releaseShapeMem(stop.join_cardinality);
+  
+  // clean up newed objects
+  delete wkt_reader ;
+  delete gf ;
+  delete pm ;
 
   return tile_counter;
 }
@@ -167,6 +173,7 @@ void releaseShapeMem(const int k ){
 
     for (int i = 0; i < len ; i++) 
       delete polydata[delete_index][i];
+    
     polydata[delete_index].clear();
     rawdata[delete_index].clear();
   }
@@ -310,11 +317,11 @@ int joinBucket()
 
 bool extractParams(int argc, char** argv ){ 
   /*
+     std::cerr <<  "argc: " << argc << std::endl;
      cerr << "argv[1] = " << argv[1] << endl;
      cerr << "argv[2] = " << argv[2] << endl;
      cerr << "argv[3] = " << argv[3] << endl;
      */
-  std::cerr <<  "argc: " << argc << std::endl;
   char *predicate_str = NULL;
   char *distance_str = NULL;
 
