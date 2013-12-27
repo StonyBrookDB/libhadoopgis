@@ -9,6 +9,7 @@ else
 fi
 
 cp ../../../data/atl.stores.tsv hgskewinput
+cp ../../../data/tweet.dump.tsv .
 
 cat tweet.dump.tsv | ./skewresque --p st_within -i 2 -j 1 -d 1 -f 1,2:5,6 > skew.out.tsv
 
