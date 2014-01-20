@@ -3,6 +3,7 @@
 #include <cmath>
 #include <map>
 #include <cstdlib> 
+#include <getopt.h>
 
 // tokenizer 
 #include "tokenizer.h"
@@ -54,6 +55,8 @@ struct query_op {
   int shape_idx_2;
   int join_cardinality;
   double expansion_distance;
+  vector<int> proj1; /* Output fields for 1st set  */
+  vector<int> proj2; /* Output fields for 2nd set */
 } stop; // st opeartor 
 
 void init();
@@ -61,6 +64,8 @@ void print_stop();
 int joinBucket();
 int mJoinQuery(); 
 void releaseShapeMem(const int k);
+int getJoinPredicate(char * predicate_str);
+void setProjectionParam(char * arg);
 bool extractParams(int argc, char** argv );
 void ReportResult( int i , int j);
 string project( vector<string> & fields, int sid);
@@ -144,7 +149,18 @@ int mJoinQuery()
 
     // populate the bucket for join 
     polydata[sid].push_back(poly);
-    rawdata[sid].push_back(project(fields,sid));
+    // rawdata[sid].push_back(project(fields,sid));
+    switch(sid){
+      case SID_1:
+        rawdata[sid].push_back(project(fields,SID_1));
+        break;
+      case SID_2:
+        rawdata[sid].push_back(project(fields,SID_2));
+        break;
+      default:
+        std::cerr << "wrong sid : " << sid << endl;
+        return false;
+    }
     previd = tile_id; 
 
     fields.clear();
@@ -249,19 +265,135 @@ bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const 
   return flag; 
 }
 
-// only print our ids for now 
+/* Filter selected fields for output
+ * If there is no field selected, output all fields (except tileid and joinid) */
 string project( vector<string> & fields, int sid) {
-  return fields[2];
+  std::stringstream ss;
+  switch (sid){
+    case 1:
+      if (stop.proj1.size() == 0) {
+          /* Do not output tileid and joinid */
+	  ss << fields[2];
+          for (int i = 3 ; i < fields.size(); i++)
+          {
+             ss << tab << fields[i];
+          }
+      } else {
+          for (int i = 0 ; i <stop.proj1.size();i++)
+          {
+             if ( 0 == i )
+               ss << fields[stop.proj1[i]] ;
+             else
+             {
+                if (stop.proj1[i] < fields.size())
+                ss << tab << fields[stop.proj1[i]];
+             }
+          }
+      }
+      break;
+    case 2:
+       if (stop.proj2.size() == 0) {
+          /* Do not output tileid and joinid */
+	  ss << fields[2];
+          for (int i = 3 ; i < fields.size(); i++)
+          {
+             ss << tab << fields[i];
+          }
+      } else {
+          for (int i = 0 ; i <stop.proj2.size();i++)
+          {
+             if ( 0 == i )
+               ss << fields[stop.proj2[i]] ;
+             else
+             {
+                if (stop.proj2[i] < fields.size())
+                ss << tab << fields[stop.proj2[i]];
+             }
+          }
+      }
+      break;
+    default:
+      break;
+  }
+
+  return ss.str();
 }
 
+/* Set output fields
+ * Fields are "technically" off by 3 (2 from extra field 
+ * and 1 because of counting from 1 ) 
+ */
+void setProjectionParam(char * arg)
+{
+  string param(arg);
+  vector<string> fields;
+  vector<string> selec;
+  tokenize(param, fields,":");
+
+  if (fields.size()>0)
+  {
+    tokenize(fields[0], selec,",");
+    for (int i =0 ;i < selec.size(); i++)
+      stop.proj1.push_back(atoi(selec[i].c_str()) + 2);
+  }
+  selec.clear();
+
+  if (fields.size()>1)
+  {
+    tokenize(fields[1], selec,",");
+    for (int i =0 ;i < selec.size(); i++)
+      stop.proj2.push_back(atoi(selec[i].c_str()) + 2);
+  }
+}
+
+int getJoinPredicate(char * predicate_str)
+{
+  if (strcmp(predicate_str, "st_intersects") == 0) {
+    // stop.JOIN_PREDICATE = ST_INTERSECTS;
+    return ST_INTERSECTS ; 
+  } 
+  else if (strcmp(predicate_str, "st_touches") == 0) {
+    return ST_TOUCHES;
+  } 
+  else if (strcmp(predicate_str, "st_crosses") == 0) {
+    return ST_CROSSES;
+  } 
+  else if (strcmp(predicate_str, "st_contains") == 0) {
+    return ST_CONTAINS;
+  } 
+  else if (strcmp(predicate_str, "st_adjacent") == 0) {
+    return ST_ADJACENT;
+  } 
+  else if (strcmp(predicate_str, "st_disjoint") == 0) {
+    return ST_DISJOINT;
+  }
+  else if (strcmp(predicate_str, "st_equals") == 0) {
+    return ST_EQUALS;
+  }
+  else if (strcmp(predicate_str, "st_dwithin") == 0) {
+    return ST_DWITHIN;
+  }
+  else if (strcmp(predicate_str, "st_within") == 0) {
+    return ST_WITHIN;
+  }
+  else if (strcmp(predicate_str, "st_overlaps") == 0) {
+    return ST_OVERLAPS;
+  }
+  else {
+    // std::cerr << "unrecognized join predicate " << std::endl;
+    return 0;
+  }
+}
+
+/* Report result separated by sep */
 void ReportResult( int i , int j)
 {
   switch (stop.join_cardinality){
     case 1:
-      cout << rawdata[SID_1][i] << tab << rawdata[SID_1][j] << endl;
+      cout << rawdata[SID_1][i] << sep << rawdata[SID_1][j] << endl;
       break;
     case 2:
-      cout << rawdata[SID_1][i] << tab << rawdata[SID_2][j] << endl; 
+      cout << rawdata[SID_1][i] << sep << rawdata[SID_2][j] << endl; 
       break;
     default:
       return ;
@@ -316,116 +448,104 @@ int joinBucket()
 }
 
 bool extractParams(int argc, char** argv ){ 
-  /*
-     std::cerr <<  "argc: " << argc << std::endl;
-     cerr << "argv[1] = " << argv[1] << endl;
-     cerr << "argv[2] = " << argv[2] << endl;
-     cerr << "argv[3] = " << argv[3] << endl;
-     */
-  char *predicate_str = NULL;
-  char *distance_str = NULL;
+  /* getopt_long stores the option index here. */
+  int option_index = 0;
+  /* getopt_long uses opterr to report error*/
+  opterr = 0 ;
+  struct option long_options[] =
+  {
+    {"distance",   required_argument, 0, 'd'},
+    {"shpidx1",  required_argument, 0, 'i'},
+    {"shpidx2",  required_argument, 0, 'j'},
+    {"predicate",  required_argument, 0, 'p'},
+    {"fields",     required_argument, 0, 'f'},
+    {0, 0, 0, 0}
+  };
 
-  switch (argc) {
-    // get param from environment variables 
-    case 1:
-      // discouraged to use env vars. Many instance of resuqe may run in the same system. 
-      if (std::getenv("stpredicate") && std::getenv("shapeidx1") && std::getenv("shapeidx2")) {
-        predicate_str = std::getenv("stpredicate");
-        stop.shape_idx_1 = strtol(std::getenv("shapeidx1"), NULL, 10) + 2;
-        stop.shape_idx_2 = strtol(std::getenv("shapeidx2"), NULL, 10) + 2;
-        distance_str = std::getenv("stexpdist");
-      } else {
-        std::cerr << "ERROR: query parameters are not set in environment variables." << std::endl;
+  int c;
+  while ((c = getopt_long (argc, argv, "p:i:j:d:f:",long_options, &option_index)) != -1){
+    switch (c)
+    {
+      case 0:
+        /* If this option set a flag, do nothing else now. */
+        if (long_options[option_index].flag != 0)
+          break;
+        cout << "option " << long_options[option_index].name ;
+        if (optarg)
+          cout << "a with arg " << optarg ;
+        cout << endl;
+        break;
+
+      case 'p':
+        stop.JOIN_PREDICATE = getJoinPredicate(optarg);
+        break;
+
+      case 'i':
+        stop.shape_idx_1 = strtol(optarg, NULL, 10) + 2;
+        stop.join_cardinality++;
+        //printf ("shape index i: `%s'\n", optarg);
+        break;
+
+      case 'j':
+        stop.shape_idx_2 = strtol(optarg, NULL, 10) + 2;
+        stop.join_cardinality++;
+        break;
+
+      case 'd':
+        stop.expansion_distance = atof(optarg);
+        break;
+
+      case 'f':
+        setProjectionParam(optarg);
+        //printf ("projection fields:  `%s'\n", optarg);
+        break;
+
+      case '?':
         return false;
-      }
-      break;
+        /* getopt_long already printed an error message. */
+        break;
 
-      // predicate only queries
-    case 2:
-      std::cerr << "ERROR: predicate only queries are not supported yet." << std::endl;
-      return false;
-      break;
-
-      // single argument predicates -- self join
-    case 3:
-      predicate_str = argv[1];
-      stop.shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
-      stop.join_cardinality +=1 ; 
-      break;
-
-      // two argument predicates
-    case 4: 
-      predicate_str = argv[1];
-      stop.shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
-      stop.join_cardinality +=1 ; 
-      if (strcmp(predicate_str, "st_dwithin") == 0) {
-        distance_str = argv[3];
-      }
-      else {
-        stop.shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
-        stop.join_cardinality +=1 ; 
-      }
-      break;
-      // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
-
-    case 5: 
-      predicate_str = argv[1];
-      stop.shape_idx_1 = strtol(argv[2], NULL, 10) + 2;
-      stop.join_cardinality +=1 ; 
-      stop.shape_idx_2 = strtol(argv[3], NULL, 10) + 2;
-      stop.join_cardinality +=1 ; 
-      distance_str = argv[4];
-      // std::cerr << "Params: [" << predicate_str << "] [" << shape_idx_1 << "] " << shape_idx_2 << "]" << std::endl;  
-
-      break;
-    default:
-      return false;
-  }
-
-  if (strcmp(predicate_str, "st_intersects") == 0) {
-    stop.JOIN_PREDICATE = ST_INTERSECTS;
-  } 
-  else if (strcmp(predicate_str, "st_touches") == 0) {
-    stop.JOIN_PREDICATE = ST_TOUCHES;
-  } 
-  else if (strcmp(predicate_str, "st_crosses") == 0) {
-    stop.JOIN_PREDICATE = ST_CROSSES;
-  } 
-  else if (strcmp(predicate_str, "st_contains") == 0) {
-    stop.JOIN_PREDICATE = ST_CONTAINS;
-  } 
-  else if (strcmp(predicate_str, "st_adjacent") == 0) {
-    stop.JOIN_PREDICATE = ST_ADJACENT;
-  } 
-  else if (strcmp(predicate_str, "st_disjoint") == 0) {
-    stop.JOIN_PREDICATE = ST_DISJOINT;
-  }
-  else if (strcmp(predicate_str, "st_equals") == 0) {
-    stop.JOIN_PREDICATE = ST_EQUALS;
-  }
-  else if (strcmp(predicate_str, "st_dwithin") == 0) {
-    stop.JOIN_PREDICATE = ST_DWITHIN;
-    if (NULL != distance_str)
-      stop.expansion_distance = atof(distance_str);
-    else {
-      std::cerr << "ERROR: expansion distance is not set." << std::endl;
-      return false;
+      default:
+        return false;
+        //abort ();
     }
   }
-  else if (strcmp(predicate_str, "st_within") == 0) {
-    stop.JOIN_PREDICATE = ST_WITHIN;
-  }
-  else if (strcmp(predicate_str, "st_overlaps") == 0) {
-    stop.JOIN_PREDICATE = ST_OVERLAPS;
-  }
-  else {
-    std::cerr << "unrecognized join predicate " << std::endl;
+
+  // query operator validation 
+  if (stop.JOIN_PREDICATE <= 0 )// is the predicate supported 
+  { 
+    cerr << "Query predicate is NOT set properly. Please refer to the documentation." << endl ; 
     return false;
+  }
+  // if the distance is valid 
+  if (ST_DWITHIN == stop.JOIN_PREDICATE && stop.expansion_distance == 0.0)
+  { 
+    cerr << "Distance parameter is NOT set properly. Please refer to the documentation." << endl ;
+    return false;
+  }
+  if (0 == stop.join_cardinality)
+  {
+    cerr << "Geometry field indexes are NOT set properly. Please refer to the documentation." << endl ;
+    return false; 
   }
 
   print_stop();
 
   return true;
+}
+
+void usage(){
+  cerr  << endl << "Usage: resque [OPTIONS]" << endl << "OPTIONS:" << endl;
+  cerr << tab << "-p,  --predicate" << tab <<  "The spatial join predicate for query processing. Acceptable values are [st_intersects, " 
+      << "st_disjoint, st_overlaps, st_within, st_equals, st_dwithin, st_crosses, st_touches, st_contains]." << endl;
+  cerr << tab << "-i, --shpidx1"  << tab << "The index of the geometry field from the larger dataset. Index value starts from 1." << endl;
+  cerr << tab << "-j, --shpidx2"  << tab << "The index of the geometry field from the smaller dataset. Index value starts from 1." << endl;
+  cerr << tab << "-d, --distance" << tab << "Used together with st_dwithin predicate to indicates the join distance." 
+      << "This field has no effect o other join predicates." << endl;
+  cerr << tab << "-f, --fields"   << tab << "Output field election parameter. Fields from different dataset are separated with a colon (:), " 
+      <<"and fields from the same dataset are separated with a comma (,). For example: if we want to only output fields 1, 3, and 5 from " 
+      << "the first dataset (indicated with param -i), and output fields 1, 2, and 9 from the second dataset (indicated with param -j) "
+      << " then we can provide an option such as: --fields 1,3,5:1,2,9 " << endl;
 }
 
 // main body of the engine
@@ -439,6 +559,7 @@ int main(int argc, char** argv)
   int c = 0 ;
   if (!extractParams(argc,argv)) {
     std::cerr <<"ERROR: query parameter extraction error." << std::endl << "Please see documentations, or contact author." << std::endl;
+    usage();
     return 1;
   }
 

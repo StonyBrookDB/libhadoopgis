@@ -275,7 +275,6 @@ bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const 
   return flag; 
 }
 
-// only print our ids for now 
 string project( vector<string> & fields, int sid) {
   std::stringstream ss;
   switch (sid){
@@ -528,8 +527,8 @@ void usage(){
   cerr << tab << "-j, --shpidx2"  << tab << "The index of the geometry field from the smaller dataset. Index value starts from 1." << endl;
   cerr << tab << "-d, --distance" << tab << "Used together with st_dwithin predicate to indicates the join distance." 
       << "This field has no effect o other join predicates." << endl;
-  cerr << tab << "-f, --fields"   << tab << "Output field election parameter. fields from different dataset are separated with a colon (:), " 
-      <<"and fields from the same dataset are separated with a comma (,). For example: if we want to only out fields 1,3, and 5 from " 
+  cerr << tab << "-f, --fields"   << tab << "Output field election parameter. Fields from different dataset are separated with a colon (:), " 
+      <<"and fields from the same dataset are separated with a comma (,). For example: if we want to only output fields 1, 3, and 5 from " 
       << "the first dataset (indicated with param -i), and output fields 1, 2, and 9 from the second dataset (indicated with param -j) "
       << " then we can provide an option such as: --fields 1,3,5:1,2,9 " << endl;
 }
