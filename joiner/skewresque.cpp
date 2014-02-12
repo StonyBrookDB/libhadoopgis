@@ -91,12 +91,18 @@ void print_stop(){
   std::cerr << "shape index 2: " << stop.shape_idx_2 << std::endl;
   std::cerr << "join cardinality: " << stop.join_cardinality << std::endl;
   std::cerr << "selected fields :" ;
+  
   for (int i =0 ; i < stop.proj1.size(); i++)
     std::cerr << " " << stop.proj1[i] ;
+  if (stop.proj1.size()==0)
+    std::cerr << "all" ;
   std::cerr << endl; 
+  
   std::cerr << "selected fields :" ;
   for (int i =0 ; i < stop.proj2.size(); i++)
     std::cerr << " " << stop.proj2[i] ;
+  if (stop.proj2.size()==0)
+    std::cerr << "all" ;
   std::cerr << endl; 
 }
 
