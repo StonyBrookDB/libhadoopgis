@@ -12,12 +12,15 @@ CC = gcc
 CXX = g++
 
 
-all: resque skewresque
+all: resque skewresque skewresque2
 
 resque: resque.cpp tokenizer.h
 	$(CXX) $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
 
 skewresque: skewresque.cpp tokenizer.h
+	$(CXX) -std=c++0x $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
+
+skewresque2: skewresque2.cpp tokenizer.h
 	$(CXX) -std=c++0x $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
 
 install:
