@@ -173,18 +173,29 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
       Second argument: directory name of the second partitioned dataset (output directory from the second partitioning step).
       Note that the directory names could just be the relative path on Amazon S3 (not necessary full path), but directory names should be distinct.
     
-     **Reducer**: Amazon S3 location of *resque* followed with arguments
-     Argument: -i The index of the geometry field in the first data set. Index value starts from 1.
-     Argument: -j The index of the geometry field in the second data set. Index value starts from 1.
-     Note: (these index of the geometry field are same as the positions of the geometry fields as in the partition step)
-     Argument: -p type of operation (see below for supported type).
-     Argument: -d Used together with st_dwithin predicate to indicates the join distance.This field has no effect o other join predicates.
-     Optional argument: -f Optional output field parameter. Fields from different dataset are separated with a colon (:), and fields from the same dataset are separated with a comma (,). For example: if we want to only output fields 1,3, and 5 from the first dataset (indicated with param -i), and output fields 1, 2, and 9 from the second dataset (indicated with param -j)  then we can provide an option such as: -f 1,3,5:1,2,9
+     **Reducer**: Amazon S3 location of *resque* followed with arguments.
+
+     Argument: -i gid1 Index of the geometry field in the first data set. Index value starts from 1.
+     
+     Argument: -j gid2 Index of the geometry field in the second data set. Index value starts from 1.
+     
+     Note: (these indices of the geometry field are same as the positions of the geometry fields as in the partition step)
+     
+     Argument: -p st_predicate Type of operation (see below for supported type).
+     
+     Argument: -d distance Used together with st_dwithin predicate to indicates the join distance.This field has no effect o other join predicates.
+     
+     Optional argument: -f f1,2,3..:1,2,3 Optional output field parameter. Fields from different dataset are separated with a colon (:), and fields from the same dataset are separated with a comma (,). For example: if we want to only output fields 1,3, and 5 from the first dataset (indicated with param -i), and output fields 1, 2, and 9 from the second dataset (indicated with param -j)  then we can provide an option such as: -f 1,3,5:1,2,9
+     
     
-     **Input location**: S3 location of the partitioned data directory.
+     **Input location**: S3 location of the first partitioned data directory (data set 1).
+    
     
      **Output location**: S3 location for the output directory.
-      Arguments: Specify the number of reduce tasks and the second input directory to
+     
+     Arguments: Specify the number of reduce tasks and the second input directory to the second data set (data set 2)
+     -input s3FullPathSecondDataSet
+     -numReduceTasks someNum
 
 
     Example - OSM dataset
@@ -234,12 +245,18 @@ If you have skewed dataset, you can use the `skewresque` to reduce your query ti
 (Visible to public)
     
   Arguments: Similar to the resque arguments above.
+
   Argument: -i The index of the geometry field in the first data set. Index value starts from 1.
-     Argument: -j The index of the geometry field in the second data set. Index value starts from 1.
+
+  Argument: -j The index of the geometry field in the second data set. Index value starts from 1.
+  
      Note: (these index of the geometry field are same as the positions of the geometry fields as in the partition step)
-     Argument: -p type of operation (see below for supported type).
-     Argument: -d Used together with st_dwithin predicate to indicates the join distance.This field has no effect o other join predicates.
-     Optional argument: -f Optional output field parameter. Fields from different dataset are separated with a colon (:), and fields from the same dataset are separated with a comma (,). For example: if we want to only output fields 1, 3, and 5 from the first dataset (indicated with param -i), and output fields 1, 2, and 9 from the second dataset (indicated with param -j)  then we can provide an option such as: -f 1,3,5:1,2,9
+
+  Argument: -p type of operation (see below for supported type).
+  
+  Argument: -d Used together with st_dwithin predicate to indicates the join distance.This field has no effect o other join predicates.
+  
+  Optional argument: -f Optional output field parameter. Fields from different dataset are separated with a colon (:), and fields from the same dataset are separated with a comma (,). For example: if we want to only output fields 1, 3, and 5 from the first dataset (indicated with param -i), and output fields 1, 2, and 9 from the second dataset (indicated with param -j)  then we can provide an option such as: -f 1,3,5:1,2,9
 
   **Reducer**: No reducer is needed.
    
@@ -247,9 +264,11 @@ If you have skewed dataset, you can use the `skewresque` to reduce your query ti
   
   **Output location**: The directory of the output should not exist on S3. It will be created by the EMR job.
    
-  Arguments: 
+  **Arguments**: 
   Argument: -numReduceTasks 0 Set the number of reduce tasks as 0
+  
   Argument: -cacheFile s3PathFileName#hgskewinput path to the small file used as the other operand in the join (Note that the small file will be renamed to hgskewinput for MapReduce in local directories).
+  
   Optinal argument: -input SomePath additional input directories as additional parts of the first dataset if needed (as for standard input)
 
   Example:
