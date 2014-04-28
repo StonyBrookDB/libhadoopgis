@@ -237,6 +237,7 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
     st_overlaps
     ```
   * **Boundary-handling (Duplicate-removal)** step:
+  * 
     Since spatial processing is performed indepedently across regions or tiles, duplicates might occur and therefore duplicates should be eliminated to achieve consistent and correct results.
     
      **Mapper**: Amazon S3 location of *hgdeduplicater* on Amazon S3 followed by the argument *cat*.
