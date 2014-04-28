@@ -1,53 +1,10 @@
-#include <iostream>
-#include <cstring>
-#include <cmath>
-#include <map>
-#include <cstdlib> 
-#include <getopt.h>
-
-// tokenizer 
-#include "tokenizer.h"
-
-// geos
-#include <geos/geom/PrecisionModel.h>
-#include <geos/geom/GeometryFactory.h>
-#include <geos/geom/Geometry.h>
-#include <geos/geom/Point.h>
-#include <geos/io/WKTReader.h>
-#include <geos/io/WKTWriter.h>
-#include <geos/opBuffer.h>
-
-#include <spatialindex/SpatialIndex.h>
-
-using namespace geos;
-using namespace geos::io;
-using namespace geos::geom;
-using namespace geos::operation::buffer; 
-
-
-// Constants
-const int OSM_SRID = 4326;
-const int ST_INTERSECTS = 1;
-const int ST_TOUCHES = 2;
-const int ST_CROSSES = 3;
-const int ST_CONTAINS = 4;
-const int ST_ADJACENT = 5;
-const int ST_DISJOINT = 6;
-const int ST_EQUALS = 7;
-const int ST_DWITHIN = 8;
-const int ST_WITHIN = 9;
-const int ST_OVERLAPS = 10;
-
-const int SID_1 = 1;
-const int SID_2 = 2;
-
-// sepertors for parsing
-const string tab = "\t";
-const string sep = "\x02"; // ctrl+a
+#include "resquecommon.h"
 
 // data type declaration 
 map<int, std::vector<Geometry*> > polydata;
 map<int, std::vector<string> > rawdata;
+ISpatialIndex * spidx = NULL;
+IStorageManager * storage = NULL;
 
 struct query_op { 
   int JOIN_PREDICATE;
@@ -57,7 +14,7 @@ struct query_op {
   double expansion_distance;
   vector<int> proj1; /* Output fields for 1st set  */
   vector<int> proj2; /* Output fields for 2nd set */
-} stop; // st opeartor 
+} stop; // st operator 
 
 void init();
 void print_stop();
@@ -69,6 +26,7 @@ void setProjectionParam(char * arg);
 bool extractParams(int argc, char** argv );
 void ReportResult( int i , int j);
 string project( vector<string> & fields, int sid);
+void freeObjects();
 
 void init(){
   // initlize query operator 
@@ -104,10 +62,10 @@ int mJoinQuery()
 
   int tile_counter =0;
 
-  std::cerr <<"Bucketinfo:[ID] |A|x|B|=|R|" <<std::endl;
+  std::cerr << "Bucketinfo:[ID] |A|x|B|=|R|" <<std::endl;
   int index = -1; 
   while(cin && getline(cin, input_line) && !cin.eof()) {
-    tokenize(input_line, fields,tab,true);
+    tokenize(input_line, fields, TAB, true);
     sid = atoi(fields[1].c_str());
     tile_id = fields[0];
     // object_id = fields[2];
@@ -193,18 +151,36 @@ void releaseShapeMem(const int k ){
     polydata[delete_index].clear();
     rawdata[delete_index].clear();
   }
-
 }
 
-bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const int jp){
+bool buildIndex(map<int,Geometry*> & geom_polygons) {
+    // build spatial index on tile boundaries 
+    id_type  indexIdentifier;
+    GEOSDataStream stream(&geom_polygons);
+    storage = StorageManager::createNewMemoryStorageManager();
+    spidx   = RTree::createAndBulkLoadNewRTree(RTree::BLM_STR, stream, *storage, 
+	    FillFactor,
+	    IndexCapacity,
+	    LeafCapacity,
+	    2, 
+	    RTree::RV_RSTAR, indexIdentifier);
+
+    // Error checking 
+    return spidx->isIndexValid();
+}
+
+
+bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, 
+        const Envelope * env1, const Envelope * env2,
+        const int jp){
   bool flag = false ; 
-  const Envelope * env1 = geom1->getEnvelopeInternal();
-  const Envelope * env2 = geom2->getEnvelopeInternal();
+//  const Envelope * env1 = geom1->getEnvelopeInternal();
+//  const Envelope * env2 = geom2->getEnvelopeInternal();
   BufferOp * buffer_op1 = NULL ;
   BufferOp * buffer_op2 = NULL ;
   Geometry* geom_buffer1 = NULL;
   Geometry* geom_buffer2 = NULL;
-
+ 
   switch (jp){
 
     case ST_INTERSECTS:
@@ -247,7 +223,7 @@ bool join_with_predicate(const Geometry * geom1 , const Geometry * geom2, const 
       if (NULL == geom_buffer1)
         cerr << "NULL: geom_buffer1" <<endl;
 
-      flag = join_with_predicate(geom_buffer1,geom2, ST_INTERSECTS);
+      flag = join_with_predicate(geom_buffer1,geom2, env1, env2, ST_INTERSECTS);
       break;
 
     case ST_WITHIN:
@@ -276,7 +252,7 @@ string project( vector<string> & fields, int sid) {
 	  ss << fields[2];
           for (int i = 3 ; i < fields.size(); i++)
           {
-             ss << tab << fields[i];
+             ss << TAB << fields[i];
           }
       } else {
           for (int i = 0 ; i <stop.proj1.size();i++)
@@ -286,7 +262,7 @@ string project( vector<string> & fields, int sid) {
              else
              {
                 if (stop.proj1[i] < fields.size())
-                ss << tab << fields[stop.proj1[i]];
+                ss << TAB << fields[stop.proj1[i]];
              }
           }
       }
@@ -297,7 +273,7 @@ string project( vector<string> & fields, int sid) {
 	  ss << fields[2];
           for (int i = 3 ; i < fields.size(); i++)
           {
-             ss << tab << fields[i];
+             ss << TAB << fields[i];
           }
       } else {
           for (int i = 0 ; i <stop.proj2.size();i++)
@@ -307,7 +283,7 @@ string project( vector<string> & fields, int sid) {
              else
              {
                 if (stop.proj2[i] < fields.size())
-                ss << tab << fields[stop.proj2[i]];
+                ss << TAB << fields[stop.proj2[i]];
              }
           }
       }
@@ -390,10 +366,10 @@ void ReportResult( int i , int j)
 {
   switch (stop.join_cardinality){
     case 1:
-      cout << rawdata[SID_1][i] << sep << rawdata[SID_1][j] << endl;
+      cout << rawdata[SID_1][i] << SEP << rawdata[SID_1][j] << endl;
       break;
     case 2:
-      cout << rawdata[SID_1][i] << sep << rawdata[SID_2][j] << endl; 
+      cout << rawdata[SID_1][i] << SEP << rawdata[SID_2][j] << endl; 
       break;
     default:
       return ;
@@ -407,7 +383,8 @@ int joinBucket()
   bool selfjoin = stop.join_cardinality ==1 ? true : false ;
   int idx1 = SID_1 ; 
   int idx2 = selfjoin ? SID_1 : SID_2 ;
-
+  double low[2], high[2];
+  
   // for each tile (key) in the input stream 
   try { 
 
@@ -416,26 +393,54 @@ int joinBucket()
 
     int len1 = poly_set_one.size();
     int len2 = poly_set_two.size();
-
+    
+    map<int,Geometry*> geom_polygons2;
+    for (int j = 0; j < len2; j++) {
+        geom_polygons2[j] = poly_set_two[j];
+    }
+    
+    // build spatial index for input polygons from idx2
+    bool ret = buildIndex(geom_polygons2);
+    if (ret == false) {
+        return -1;
+    }
     // cerr << "len1 = " << len1 << endl;
     // cerr << "len2 = " << len2 << endl;
 
-    // should use iterator, update later
-    for (int i = 0; i < len1 ; i++) {
-      const Geometry* geom1 = poly_set_one[i];
-
-      for (int j = 0; j < len2 ; j++) {
-        if (i == j && selfjoin) 
-          continue ; 
-
-        const Geometry* geom2 = poly_set_two[j];
-        if (join_with_predicate(geom1, geom2, stop.JOIN_PREDICATE))  {
-          ReportResult(i,j);
-          pairs++;
+    for (int i = 0; i < len1; i++) {
+        const Geometry* geom1 = poly_set_one[i];
+        const Envelope * env1 = geom1->getEnvelopeInternal();
+        low[0] = env1->getMinX();
+        low[1] = env1->getMinY();
+        high[0] = env1->getMaxX();
+        high[1] = env1->getMaxY();
+        /* Handle the buffer expansion for R-tree */
+        if (stop.JOIN_PREDICATE == ST_DWITHIN) {
+            low[0] -= stop.expansion_distance;
+            low[1] -= stop.expansion_distance;
+            high[0] += stop.expansion_distance;
+            high[1] += stop.expansion_distance;
         }
-
-      } // end of for (int j = 0; j < len2 ; j++) 
-    } // end of for (int i = 0; i < len1 ; i++) 	
+        
+        Region r(low, high, 2);
+        hits.clear();
+        MyVisitor vis;
+        spidx->intersectsWithQuery(r, vis);
+        //cerr << "j = " << j << " hits: " << hits.size() << endl;
+        for (uint32_t j = 0 ; j < hits.size(); j++ ) 
+        {
+            if (hits[j] == i && selfjoin) {
+                continue;
+            }
+            const Geometry* geom2 = poly_set_two[hits[j]];
+            const Envelope * env2 = geom2->getEnvelopeInternal();
+            if (join_with_predicate(geom1, geom2, env1, env2,
+                    stop.JOIN_PREDICATE))  {
+              ReportResult(i,j);
+              pairs++;
+            }
+        }
+    }
   } // end of try
   //catch (Tools::Exception& e) {
   catch (...) {
@@ -534,15 +539,21 @@ bool extractParams(int argc, char** argv ){
   return true;
 }
 
+void freeObjects() {
+    // garbage collection
+    delete spidx;
+    delete storage;
+}
+
 void usage(){
   cerr  << endl << "Usage: resque [OPTIONS]" << endl << "OPTIONS:" << endl;
-  cerr << tab << "-p,  --predicate" << tab <<  "The spatial join predicate for query processing. Acceptable values are [st_intersects, " 
+  cerr << TAB << "-p,  --predicate" << TAB <<  "The spatial join predicate for query processing. Acceptable values are [st_intersects, " 
       << "st_disjoint, st_overlaps, st_within, st_equals, st_dwithin, st_crosses, st_touches, st_contains]." << endl;
-  cerr << tab << "-i, --shpidx1"  << tab << "The index of the geometry field from the larger dataset. Index value starts from 1." << endl;
-  cerr << tab << "-j, --shpidx2"  << tab << "The index of the geometry field from the smaller dataset. Index value starts from 1." << endl;
-  cerr << tab << "-d, --distance" << tab << "Used together with st_dwithin predicate to indicates the join distance." 
+  cerr << TAB << "-i, --shpidx1"  << TAB << "The index of the geometry field from the larger dataset. Index value starts from 1." << endl;
+  cerr << TAB << "-j, --shpidx2"  << TAB << "The index of the geometry field from the smaller dataset. Index value starts from 1." << endl;
+  cerr << TAB << "-d, --distance" << TAB << "Used together with st_dwithin predicate to indicates the join distance." 
       << "This field has no effect o other join predicates." << endl;
-  cerr << tab << "-f, --fields"   << tab << "Output field election parameter. Fields from different dataset are separated with a colon (:), " 
+  cerr << TAB << "-f, --fields"   << TAB << "Output field election parameter. Fields from different dataset are separated with a colon (:), " 
       <<"and fields from the same dataset are separated with a comma (,). For example: if we want to only output fields 1, 3, and 5 from " 
       << "the first dataset (indicated with param -i), and output fields 1, 2, and 9 from the second dataset (indicated with param -j) "
       << " then we can provide an option such as: --fields 1,3,5:1,2,9 " << endl;
@@ -582,10 +593,10 @@ int main(int argc, char** argv)
     std::cerr <<"Error: ill formatted data. Terminating ....... " << std::endl;
     return 1;
   }
-
+  freeObjects();
+  
   cout.flush();
   cerr.flush();
-
   return 0;
 }
 

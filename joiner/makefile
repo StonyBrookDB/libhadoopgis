@@ -14,13 +14,13 @@ CXX = g++
 
 all: resque skewresque skewresque2
 
-resque: resque.cpp tokenizer.h
+resque: resque.cpp tokenizer.h resquecommon.h
 	$(CXX) $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
 
-skewresque: skewresque.cpp tokenizer.h
+skewresque: skewresque.cpp tokenizer.h resquecommon.h
 	$(CXX) -std=c++0x $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
 
-skewresque2: skewresque2.cpp tokenizer.h
+skewresque2: skewresque2.cpp tokenizer.h resquecommon.h
 	$(CXX) -std=c++0x $< $(INCFLAGS) $(LIBS) $(OPTFLAGS) -o $@
 
 install:
