@@ -111,12 +111,13 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
     Arguments: -w minX –s minY – n maxY –e maxX (The minimum and maximum coordinates of the spatial universe)
     
     Argument: -x numberOfXsplits Number of splits across the horizontal direction.
-
+    
     Argument: –y numberOfYsplits Number of splits across the vertical direction.
     
     Argument: -u uidNum: index of the uid field (counting from 1).
     
     Argument: -g gidNum: index of the geometry field (counting from 1).
+    
    
     **Input location**: Amazon S3 Location of the first data file on Amazon S3. Note that the fields should be seperated by tabs (tsv)!
    
@@ -168,13 +169,14 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
     the datasets to be joined.
     
      **Mapper**: Amazon S3 location of *tagmapper.py* on Amazon S3 followed by 1 or 2 arguments.
-     
       First argument: directory name of the first partitioned dataset (output directory from the first partitioning step).
+
       Second argument: directory name of the second partitioned dataset (output directory from the second partitioning step).
+      
       Note that the directory names could just be the relative path on Amazon S3 (not necessary full path), but directory names should be distinct.
+      
     
      **Reducer**: Amazon S3 location of *resque* followed with arguments.
-
      Argument: -i gid1 Index of the geometry field in the first data set. Index value starts from 1.
      
      Argument: -j gid2 Index of the geometry field in the second data set. Index value starts from 1.
@@ -234,6 +236,26 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
     st_within
     st_overlaps
     ```
+  * **Boundary-handling (Duplicate-removal)** step:
+    Since spatial processing is performed indepedently across regions or tiles, duplicates might occur and therefore duplicates should be eliminated to achieve consistent and correct results.
+    
+     **Mapper**: Amazon S3 location of *hgdeduplicater* on Amazon S3 followed by the argument *cat*.
+    
+     **Reducer**: Amazon S3 location of *hgdeduplicater* on Amazon S3 followed by the argument *uniq*.
+    
+     **Input location**: Amazon S3 location of the output directory from the previous spatial join step.
+    
+     **Output location**: Amazon S3 location for the final output directory.
+
+    Example - OSM dataset
+    ```bash
+    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater cat
+    Reducer: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater uniq
+    Input location: s3://yourbucket/libhadoopgis/sampleout/
+    Output location: s3://yourbucket/libhadoopgis/samplefinalout/
+    Argument: -numReduceTasks 20
+    ```
+
 
 ##Optimization for Skewed Dataset
 
