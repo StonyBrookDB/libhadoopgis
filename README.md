@@ -240,9 +240,9 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
   * 
     Since spatial processing is performed indepedently across regions or tiles, duplicates might occur and therefore duplicates should be eliminated to achieve consistent and correct results.
     
-     **Mapper**: Amazon S3 location of *hgdeduplicater* on Amazon S3 followed by the argument *cat*.
+     **Mapper**: Amazon S3 location of *hgdeduplicater.py* on Amazon S3 followed by the argument *cat*.
     
-     **Reducer**: Amazon S3 location of *hgdeduplicater* on Amazon S3 followed by the argument *uniq*.
+     **Reducer**: Amazon S3 location of *hgdeduplicater.py* on Amazon S3 followed by the argument *uniq*.
     
      **Input location**: Amazon S3 location of the output directory from the previous spatial join step.
     
@@ -250,8 +250,8 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
 
     Example - OSM dataset
     ```bash
-    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater cat
-    Reducer: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater uniq
+    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat
+    Reducer: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py uniq
     Input location: s3://yourbucket/libhadoopgis/sampleout/
     Output location: s3://yourbucket/libhadoopgis/samplefinalout/
     Argument: -numReduceTasks 20
