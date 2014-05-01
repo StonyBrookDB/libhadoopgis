@@ -27,10 +27,10 @@ The current version of libhadoopgis supports two major steps in the spatial proc
 
 - libspatialindex 1.8.x (x >= 0)
 
-## Amazon Web Services (AWS) Dependency (for Command Line Interface):
-Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-cli-install.html)
+## Installing dependencies:
 
-## Steps to compile on local cluster:
+
+### Steps to compile on local cluster:
 
   ```bash
   sudo apt-get -y install cmake
@@ -65,7 +65,9 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
   ```
   
 
-## Steps to run from AWS EMR web interface:
+### Steps to run from AWS EMR web interface:
+
+Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-cli-install.html)
 
 ### Source code compilation and configuration:
 
