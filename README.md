@@ -32,7 +32,7 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
 
 ## Steps to compile on local cluster:
 
-    ```bash
+  ```bash
   sudo apt-get -y install cmake
   wget http://download.osgeo.org/geos/geos-3.3.9.tar.bz2
   tar xvf geos-3.3.9.tar.bz2
@@ -62,7 +62,7 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
 
   echo \'/usr/local/lib\' >> /etc/ld.so.conf.d/local-lib.conf
   /sbin/ldconfig
-    ```
+  ```
   
 
 ## Steps to run from AWS EMR web interface:
