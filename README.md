@@ -4,6 +4,21 @@ scalable and high performance spatial data warehousing system for running spatia
 Hadoop. *libhadoopgis* comes with a set of easy to use scripts which enables you to run 
 hadoopgis queries on Amazon EMR.
 
+The current version of libhadoopgis supports two major steps in the spatial processing pipeline:
+1. Spatial data partitioning:
+
+  The raw data is partitioned using different partitioning methods.
+
+  The first step in data partitioning creates a file containing the geometries of the partitions. This step can be done on a single-node computer or using MapReduce.
+  
+  The second step maps the data into their respective partitions they belong to. If there are multiple sets of data, they are co-partitioned, which produce the same partition geometry for all of them.
+
+2. Spatial queries:
+
+  The input data of this step can be the partitioned data from the first step.
+
+  The data set or sets are processed based on the user-given spatial predicate.
+
 ## Library Dependencies:
 *libhadoopgis* relies on two libraries for performing spatial data processing. An [EMR bootstrap action] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-plan-bootstrap.html) script is provided in the libhadopgis repository.
 
