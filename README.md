@@ -30,6 +30,41 @@ The current version of libhadoopgis supports two major steps in the spatial proc
 ## Amazon Web Services (AWS) Dependency (for Command Line Interface):
 Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-cli-install.html)
 
+## Steps to compile on local cluster:
+
+    ```bash
+  sudo apt-get -y install cmake
+  wget http://download.osgeo.org/geos/geos-3.3.9.tar.bz2
+  tar xvf geos-3.3.9.tar.bz2
+  cd geos-3.3.9
+  mkdir Release
+  cd Release
+  cmake ..
+  make
+  sudo make install
+
+  wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.1.tar.bz2
+  tar xvf spatialindex-src-1.8.1.tar.bz2
+  cd spatialindex-src-1.8.1
+  mkdir Release
+  cd Release
+  cmake ..
+  make
+  sudo make install
+  
+  git clone https://github.com/ablimit/libhadoopgis
+  cd libhadoopgis
+  cd tiler
+  make
+
+  cd ../joiner
+  make
+
+  echo \'/usr/local/lib\' >> /etc/ld.so.conf.d/local-lib.conf
+  /sbin/ldconfig
+    ```
+  
+
 ## Steps to run from AWS EMR web interface:
 
 ### Source code compilation and configuration:
@@ -49,7 +84,8 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
 
 
 2. Dowload and compile *libhadoopgis* on the cluster.
-  This step only need to be done every time you start the cluster. Therefore, you can put this in the _boostrap action_. 
+
+  This step only need to be done every time you start a new cluster. Therefore, you can put this in the _boostrap action_. 
   ```bash
   sudo apt-get -y install cmake
   wget http://download.osgeo.org/geos/geos-3.3.9.tar.bz2
@@ -254,11 +290,11 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
     ```
   * **Boundary-handling (Duplicate-removal)** step:
   * 
-    Since spatial processing is performed indepedently across regions or tiles, duplicates might occur and therefore duplicates should be eliminated to achieve consistent and correct results.
+    Since spatial processing is performed independently across regions or tiles, duplicates might occur and therefore duplicates should be eliminated to achieve consistent and correct results.
     
-     **Mapper**: Amazon S3 location of *hgdeduplicater* on Amazon S3 followed by the argument *cat*.
+     **Mapper**: Amazon S3 location of *hgdeduplicater.py* on Amazon S3 followed by the argument *cat*.
     
-     **Reducer**: Amazon S3 location of *hgdeduplicater* on Amazon S3 followed by the argument *uniq*.
+     **Reducer**: Amazon S3 location of *hgdeduplicater.py* on Amazon S3 followed by the argument *uniq*.
     
      **Input location**: Amazon S3 location of the output directory from the previous spatial join step.
     
@@ -266,8 +302,8 @@ Amazon Elastic MapReduce Command Line Interface (CLI): [Amazon EMR CLI] (http://
 
     Example - OSM dataset
     ```bash
-    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater cat
-    Reducer: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater uniq
+    Mapper: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py cat
+    Reducer: s3://yourbucket/libhadoopgis/joiner/hgdeduplicater.py uniq
     Input location: s3://yourbucket/libhadoopgis/sampleout/
     Output location: s3://yourbucket/libhadoopgis/samplefinalout/
     Argument: -numReduceTasks 20
