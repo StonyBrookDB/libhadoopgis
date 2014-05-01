@@ -5,6 +5,7 @@ Hadoop. *libhadoopgis* comes with a set of easy to use scripts which enables you
 hadoopgis queries on Amazon EMR.
 
 The current version of libhadoopgis supports two major steps in the spatial processing pipeline:
+
 1. Spatial data partitioning:
 
   The raw data is partitioned using different partitioning methods.
